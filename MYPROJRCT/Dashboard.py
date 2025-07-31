@@ -245,32 +245,24 @@ with tab2:
     st.success("This summary gives a quick snapshot of overall team attendance and productivity.")
                   
 # --- Tab 3: Download ---
-with tab2:
-    st.subheader("📄 Executive Summary")
+with tab3:
+    st.subheader("📥 Download Processed Data")
+    
+    # Optional: preview filtered data
+    st.dataframe(filtered_df)
 
-    # Show available columns
-    st.write("Columns available:", df.columns.tolist())
+    # Prepare CSV
+    csv = filtered_df.to_csv(index=False).encode('utf-8')
 
-    total_employees = len(df)
+    # Download button
+    st.download_button(
+        label="📄 Download CSV",
+        data=csv,
+        file_name='processed_attendance.csv',
+        mime='text/csv'
+    )
 
-    # Parse timestamps if not already parsed
-    df['in_time'] = pd.to_datetime(df['in_time'], errors='coerce')
-    df['out_time'] = pd.to_datetime(df['out_time'], errors='coerce')
-
-    # Calculate punctuality
-    df['is_punctual'] = df['in_time'].dt.time <= pd.to_datetime("09:15:00").time()
-    punctuality_rate = df['is_punctual'].mean() * 100
-
-    # Calculate working hours (in hours)
-    df['working_hours'] = (df['out_time'] - df['in_time']).dt.total_seconds() / 3600
-    avg_hours_worked = df['working_hours'].mean()
-
-    # Summary
-    st.markdown(f"- **Total Employees:** `{total_employees}`")
-    st.markdown(f"- **Punctuality Rate:** `{punctuality_rate:.2f}%`")
-    st.markdown(f"- **Average Hours Worked:** `{avg_hours_worked:.2f} hrs`")
-
-    st.success("This summary gives a quick snapshot of overall team attendance and productivity.")
+    st.caption("Click the button above to download the filtered attendance data.")
 
 # --- Tab 4: Email Summary ---
 with tab4:
