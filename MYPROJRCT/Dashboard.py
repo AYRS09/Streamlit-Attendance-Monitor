@@ -224,6 +224,22 @@ with tab1:
         fig_bottom5 = px.bar(bottom5, x='Employee ID', y='Late Days', color='Employee ID', text='Late Days')
         fig_bottom5.update_layout(showlegend=False)
         st.plotly_chart(fig_bottom5, use_container_width=True)
+
+# --- Tab 2: Summary ---
+with tab2:
+    st.subheader("📄 Executive Summary")
+
+    total_employees = len(df)
+    punctuality_rate = df['Punctuality'].mean() * 100
+    avg_hours_worked = df['Total Hours Worked'].mean()
+
+    st.markdown(f"""
+    - **Total Employees:** `{total_employees}`
+    - **Punctuality Rate:** `{punctuality_rate:.2f}%`
+    - **Average Hours Worked:** `{avg_hours_worked:.2f} hrs`
+    """)
+
+    st.success("This summary gives a quick snapshot of overall team attendance and productivity.")
                   
 # --- Tab 3: Download ---
 with tab3:
