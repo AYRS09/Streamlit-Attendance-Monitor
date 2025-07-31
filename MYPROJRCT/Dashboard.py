@@ -124,9 +124,11 @@ df_long = df.melt(
 # Extract day number and convert to date
 df_long['day_num'] = df_long['day'].str.extract(r'(\d+)').astype(int)
 df_long['date'] = pd.to_datetime('2025-06-01') + pd.to_timedelta(df_long['day_num'] - 1, unit='D')
+
 # Extract in_time and out_time from original df
-df_long['in_time'] = df.apply(lambda row: row.get(f'in_{int(row["day_num"])}', np.nan), axis=1)
-df_long['out_time'] = df.apply(lambda row: row.get(f'out_{int(row["day_num"])}', np.nan), axis=1)
+df_long['day_num'] = df_long['date'].dt.day
+df_long['in_time'] = df_long.apply(lambda row: df.loc[row.name, f'in_{int(row["day_num"])}'] if f'in_{int(row["day_num"])}' in df.columns else np.nan, axis=1)
+df_long['out_time'] = df_long.apply(lambda row: df.loc[row.name, f'out_{int(row["day_num"])}'] if f'out_{int(row["day_num"])}' in df.columns else np.nan, axis=1)
 
 # Add punctuality flag
 df_long['is_punctual'] = df_long['hours_worked'] >= 8
