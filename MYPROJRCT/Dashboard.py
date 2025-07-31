@@ -316,17 +316,18 @@ with tab4:
                 msg['From'] = sender_email
                 msg['To'] = recipient_email
                 msg.set_content(
-                    "Hi,\n\nPlease find attached the latest employee attendance summary.\n\nRegards,\nDashboard System")
+                    "Hi,\n\nPlease find attached the daily and monthly employee attendance summary.\n\nRegards,\nDashboard System")
 
                 output = io.BytesIO()
                 with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                    df_export.to_excel(writer, index=False, sheet_name='Summary')
+                    daily_summary.to_excel(writer, index=False, sheet_name='Daily Summary')
+                    monthly_summary_df.to_excel(writer, index=False, sheet_name='Monthly Summary')
                 output.seek(0)
                 msg.add_attachment(
                     output.read(),
                     maintype='application',
                     subtype='vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    filename='EmployeeSummary.xlsx'
+                    filename='EmployeeAttendanceSummary.xlsx'
                 )
 
                 with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
