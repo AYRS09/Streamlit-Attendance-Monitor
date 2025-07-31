@@ -259,55 +259,52 @@ with tab2:
 with tab3:
     st.subheader("📥 Download Processed Data")
 
-    if 'date' not in filtered_df.columns:
-        st.warning("Missing column: 'date'. Please upload a valid file.")
+    # --- Ensure required columns exist ---
+    required_cols = {'employee_id', 'date', 'in_time', 'out_time', 'hours_worked', 'is_punctual'}
+    if not required_cols.issubset(filtered_df.columns):
+        st.error(f"❌ Missing columns in data for download. Required: {', '.join(required_cols)}")
     else:
+        # Convert date column to datetime
         filtered_df['date'] = pd.to_datetime(filtered_df['date'])
 
-        # ========== DAILY SUMMARY ==========
-        required_cols_daily = {'employee_id', 'date', 'in_time', 'out_time', 'hours_worked', 'is_punctual'}
-        if required_cols_daily.issubset(filtered_df.columns):
-            daily_summary = filtered_df.groupby(['employee_id', 'date']).agg(
-                In_Time=('in_time', 'first'),
-                Out_Time=('out_time', 'first'),
-                Hours_Worked=('hours_worked', 'first'),
-                Punctual=('is_punctual', lambda x: 'Yes' if x.iloc[0] else 'No')
-            ).reset_index()
-            daily_summary['Hours_Worked'] = daily_summary['Hours_Worked'].round(2)
+        # ✅ DAILY SUMMARY (Truly per-day)
+        daily_summary = filtered_df.groupby(['employee_id', 'date']).agg(
+            In_Time=('in_time', 'first'),
+            Out_Time=('out_time', 'first'),
+            Hours_Worked=('hours_worked', 'first'),
+            Punctual=('is_punctual', lambda x: 'Yes' if x.iloc[0] else 'No')
+        ).reset_index()
 
-            st.markdown("### 📅 Download Daily Punctuality Summary")
-            st.download_button(
-                label="📄 Download Daily Summary CSV",
-                data=daily_summary.to_csv(index=False).encode('utf-8'),
-                file_name='daily_punctuality_summary.csv',
-                mime='text/csv'
-            )
-        else:
-            st.warning("Missing columns in data for daily summary. Required: " + ", ".join(required_cols_daily))
+        daily_summary['Hours_Worked'] = daily_summary['Hours_Worked'].round(2)
 
-        # ========== MONTHLY SUMMARY ==========
-        required_cols_monthly = {'employee_id', 'date', 'hours_worked', 'is_punctual'}
-        if required_cols_monthly.issubset(filtered_df.columns):
-            filtered_df['month_year'] = filtered_df['date'].dt.to_period('M').astype(str)
+        st.markdown("### 📅 Download Daily Punctuality Summary")
+        st.download_button(
+            label="📄 Download Daily Summary CSV",
+            data=daily_summary.to_csv(index=False).encode('utf-8'),
+            file_name='daily_punctuality_summary.csv',
+            mime='text/csv'
+        )
 
-            monthly_summary_df = filtered_df.groupby(['employee_id', 'month_year']).agg(
-                Total_Days=('date', 'count'),
-                Punctual_Days=('is_punctual', lambda x: (x == True).sum()),
-                Late_Days=('is_punctual', lambda x: (x == False).sum()),
-                Punctuality_Rate=('is_punctual', lambda x: round((x == True).mean() * 100, 2)),
-                Avg_Hours_Worked=('hours_worked', 'mean')
-            ).reset_index()
-            monthly_summary_df['Avg_Hours_Worked'] = monthly_summary_df['Avg_Hours_Worked'].round(2)
+        # ✅ MONTHLY SUMMARY (Grouped by Month)
+        filtered_df['month_year'] = filtered_df['date'].dt.to_period('M').astype(str)
 
-            st.markdown("### 🗓️ Download Monthly Punctuality Summary")
-            st.download_button(
-                label="📄 Download Monthly Summary CSV",
-                data=monthly_summary_df.to_csv(index=False).encode('utf-8'),
-                file_name='monthly_punctuality_summary.csv',
-                mime='text/csv'
-            )
-        else:
-            st.warning("Missing columns in data for monthly summary. Required: " + ", ".join(required_cols_monthly))
+        monthly_summary_df = filtered_df.groupby(['employee_id', 'month_year']).agg(
+            Total_Days=('date', 'count'),
+            Punctual_Days=('is_punctual', lambda x: (x == True).sum()),
+            Late_Days=('is_punctual', lambda x: (x == False).sum()),
+            Punctuality_Rate=('is_punctual', lambda x: round((x == True).mean() * 100, 2)),
+            Avg_Hours_Worked=('hours_worked', 'mean')
+        ).reset_index()
+
+        monthly_summary_df['Avg_Hours_Worked'] = monthly_summary_df['Avg_Hours_Worked'].round(2)
+
+        st.markdown("### 🗓️ Download Monthly Punctuality Summary")
+        st.download_button(
+            label="📄 Download Monthly Summary CSV",
+            data=monthly_summary_df.to_csv(index=False).encode('utf-8'),
+            file_name='monthly_punctuality_summary.csv',
+            mime='text/csv'
+        )
 
 # --- Tab 4: Email Summary ---
 with tab4:
