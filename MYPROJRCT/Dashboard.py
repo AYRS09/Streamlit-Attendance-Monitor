@@ -258,22 +258,47 @@ with tab2:
 # --- Tab 3: Download ---
 with tab3:
     st.subheader("📥 Download Processed Data")
-    
-    # Optional: preview filtered data
-    st.dataframe(filtered_df)
 
-    # Prepare CSV
-    csv = filtered_df.to_csv(index=False).encode('utf-8')
+    # Daily Summary Download
+    daily_summary = filtered_df.groupby('employee_id').agg(
+        Total_Days=('date', 'count'),
+        Punctual_Days=('is_punctual', lambda x: (x == True).sum()),
+        Late_Days=('is_punctual', lambda x: (x == False).sum()),
+        Punctuality_Rate=('is_punctual', lambda x: round((x == True).mean() * 100, 2)),
+        Avg_Hours_Worked=('hours_worked', 'mean')
+    ).reset_index()
 
-    # Download button
+    daily_summary['Avg_Hours_Worked'] = daily_summary['Avg_Hours_Worked'].round(2)
+
+    st.markdown("### 📅 Download Daily Punctuality Summary")
     st.download_button(
-        label="📄 Download CSV",
-        data=csv,
-        file_name='processed_attendance.csv',
+        label="📄 Download Daily Summary CSV",
+        data=daily_summary.to_csv(index=False).encode('utf-8'),
+        file_name='daily_punctuality_summary.csv',
         mime='text/csv'
     )
 
-    st.caption("Click the button above to download the filtered attendance data.")
+    # Monthly Summary Download
+    st.markdown("### 🗓️ Download Monthly Punctuality Summary")
+
+    filtered_df['month_year'] = filtered_df['date'].dt.to_period('M').astype(str)
+
+    monthly_summary_df = filtered_df.groupby(['employee_id', 'month_year']).agg(
+        Total_Days=('date', 'count'),
+        Punctual_Days=('is_punctual', lambda x: (x == True).sum()),
+        Late_Days=('is_punctual', lambda x: (x == False).sum()),
+        Punctuality_Rate=('is_punctual', lambda x: round((x == True).mean() * 100, 2)),
+        Avg_Hours_Worked=('hours_worked', 'mean')
+    ).reset_index()
+
+    monthly_summary_df['Avg_Hours_Worked'] = monthly_summary_df['Avg_Hours_Worked'].round(2)
+
+    st.download_button(
+        label="📄 Download Monthly Summary CSV",
+        data=monthly_summary_df.to_csv(index=False).encode('utf-8'),
+        file_name='monthly_punctuality_summary.csv',
+        mime='text/csv'
+    )
 
 # --- Tab 4: Email Summary ---
 with tab4:
