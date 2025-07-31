@@ -259,16 +259,18 @@ with tab2:
 with tab3:
     st.subheader("📥 Download Processed Data")
 
-    # Daily Summary Download
-    daily_summary = filtered_df.groupby('employee_id').agg(
-        Total_Days=('date', 'count'),
-        Punctual_Days=('is_punctual', lambda x: (x == True).sum()),
-        Late_Days=('is_punctual', lambda x: (x == False).sum()),
-        Punctuality_Rate=('is_punctual', lambda x: round((x == True).mean() * 100, 2)),
-        Avg_Hours_Worked=('hours_worked', 'mean')
+    # Convert date column to datetime just in case
+    filtered_df['date'] = pd.to_datetime(filtered_df['date'])
+
+    # ✅ DAILY SUMMARY (Truly per-day)
+    daily_summary = filtered_df.groupby(['employee_id', 'date']).agg(
+        In_Time=('in_time', 'first'),
+        Out_Time=('out_time', 'first'),
+        Hours_Worked=('hours_worked', 'first'),
+        Punctual=('is_punctual', lambda x: 'Yes' if x.iloc[0] else 'No')
     ).reset_index()
 
-    daily_summary['Avg_Hours_Worked'] = daily_summary['Avg_Hours_Worked'].round(2)
+    daily_summary['Hours_Worked'] = daily_summary['Hours_Worked'].round(2)
 
     st.markdown("### 📅 Download Daily Punctuality Summary")
     st.download_button(
@@ -278,13 +280,10 @@ with tab3:
         mime='text/csv'
     )
 
-    # Monthly Summary Download
-    st.markdown("### 🗓️ Download Monthly Punctuality Summary")
+    # ✅ MONTHLY SUMMARY (Grouped by Month)
+    filtered_df['month_year'] = filtered_df['date'].dt.to_period('M').astype(str)
 
-    monthly_df = filtered_df.copy()
-    monthly_df['month_year'] = monthly_df['date'].dt.to_period('M').astype(str)
-
-    monthly_summary_df = monthly_df.groupby(['employee_id', 'month_year']).agg(
+    monthly_summary_df = filtered_df.groupby(['employee_id', 'month_year']).agg(
         Total_Days=('date', 'count'),
         Punctual_Days=('is_punctual', lambda x: (x == True).sum()),
         Late_Days=('is_punctual', lambda x: (x == False).sum()),
@@ -294,6 +293,7 @@ with tab3:
 
     monthly_summary_df['Avg_Hours_Worked'] = monthly_summary_df['Avg_Hours_Worked'].round(2)
 
+    st.markdown("### 🗓️ Download Monthly Punctuality Summary")
     st.download_button(
         label="📄 Download Monthly Summary CSV",
         data=monthly_summary_df.to_csv(index=False).encode('utf-8'),
