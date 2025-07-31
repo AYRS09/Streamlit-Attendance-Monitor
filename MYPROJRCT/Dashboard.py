@@ -128,6 +128,7 @@ df_long['date'] = pd.to_datetime('2025-06-01') + pd.to_timedelta(df_long['day_nu
 # Extract in_time and out_time from original df
 # Reset index so df and df_long row indices match
 df = df.reset_index(drop=True)
+df.set_index('employee_id', inplace=True)
 
 # Add employee_id to each melted row before melting (assuming employee_id exists)
 id_vars = ['employee_id']
