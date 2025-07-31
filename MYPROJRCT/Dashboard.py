@@ -7,6 +7,19 @@ import smtplib
 from email.message import EmailMessage
 from PIL import Image
 
+# Theme toggle
+theme = st.sidebar.radio("🌓 Choose Theme", ["Light", "Dark"])
+if theme == "Dark":
+    st.markdown(
+        """
+        <style>
+        body { background-color: #0E1117; color: white; }
+        .stApp { background-color: #0E1117; color: white; }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
 # --- Streamlit Config ---
 st.set_page_config(page_title="Employee Punctuality Dashboard", layout="wide")
 
@@ -17,17 +30,31 @@ curr_dir = os.path.dirname(__file__)
 image_path = os.path.join(curr_dir, "download.jpeg")
 
 if os.path.exists(image_path):
-    st.sidebar.image(image_path, width=150)  # 👈 This places it in the sidebar
+    st.sidebar.image(image_path, width=120)
+    st.sidebar.markdown("### 👋 Welcome to the Dashboard")
+    
 else:
     st.sidebar.warning("⚠️ Logo image not found.")
+
+from datetime import datetime
+
+# Show Last Updated Timestamp on top-right
+now = datetime.now().strftime("%d %b %Y, %I:%M %p")
+st.markdown(
+    f"<div style='text-align:right; color:gray; font-size:0.85rem;'>🕒 Last updated: {now}</div>",
+    unsafe_allow_html=True
+)
 
 # --- Title ---
 st.markdown("<h1 style='text-align: center; color: #4B8BBE;'>📊 Employee Productivity Dashboard | Diverse Infotech Pvt Ltd</h1>", unsafe_allow_html=True)
 st.markdown("<h4 style='text-align: center; color: gray;'>Punctuality & Productivity Analysis Based on Daily Hours Worked</h4>", unsafe_allow_html=True)
 
 # --- File Upload ---
+st.sidebar.markdown("---")
 st.sidebar.subheader("📄 Upload Attendance Sheet")
 file = st.sidebar.file_uploader("Upload Excel/CSV File", type=["xlsx", "xls", "csv"])
+st.sidebar.info("ℹ️ Upload your Excel or CSV attendance file to view the dashboard.")
+st.sidebar.markdown("---")
 
 if file is not None:
     if file.name.endswith(".csv"):
@@ -56,7 +83,7 @@ for in_col, out_col in zip(in_cols, out_cols):
     except Exception as e:
         st.warning(f"⚠️ Error calculating hours for {in_col} & {out_col}: {e}")
 
-        # Step 1: Drop perfect duplicate rows, if any
+# Step 1: Drop perfect duplicate rows, if any
 df.drop_duplicates(inplace=True)
 
 # Step 2: Check for employees with multiple rows
@@ -198,23 +225,32 @@ with tab1:
         fig_bottom5.update_layout(showlegend=False)
         st.plotly_chart(fig_bottom5, use_container_width=True)
                   
+# --- Tab 3: Download ---
+with tab3:
+    st.subheader("📅 Download Filtered Summary")
+    df_export = filtered_df.copy()
+    df_export['day'] = df_export['day_num'].astype(str)
+    df_export['is_punctual'] = df_export['is_punctual'].map({True: 'Yes', False: 'No'})
+    df_export.rename(columns={
+        'employee_id': 'Employee ID',
+        'employee_gender': 'Gender',
+        'employee_resident': 'Resident Type',
+        'employee_department': 'Department',
+        'day': 'Day',
+        'hours_worked': 'Hours Worked',
+        'is_punctual': 'Punctual (≥8 hrs)'
+    }, inplace=True)
 
-# --- Tab 2: Summary ---
-with tab2:
-    st.subheader("📆 Summary Table with Punctuality %")
-    summary = filtered_df.groupby(['employee_id', 'employee_department']).agg(
-        Total_Days=('is_punctual', 'count'),
-        Punctual_Days=('is_punctual', 'sum')
-    ).reset_index()
-    summary['Punctuality %'] = round((summary['Punctual_Days'] / summary['Total_Days']) * 100, 2)
-    st.dataframe(summary)
-
-    st.subheader("🏢 Department-wise Avg Hours Worked")
-    dep_avg = filtered_df.groupby('employee_department')['hours_worked'].mean().reset_index()
-    dep_avg['hours_worked'] = dep_avg['hours_worked'].round(2)
-    fig_dep = px.bar(dep_avg, x='employee_department', y='hours_worked', color='employee_department', text='hours_worked')
-    fig_dep.update_layout(showlegend=False)
-    st.plotly_chart(fig_dep, use_container_width=True)
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df_export.to_excel(writer, index=False, sheet_name='Summary')
+    
+    st.download_button(
+        label="📥 Download Attendance Summary",
+        data=output.getvalue(),
+        file_name="AttendanceSummary.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
 # --- Tab 3: Download ---
 with tab3:
