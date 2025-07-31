@@ -10,12 +10,14 @@ from PIL import Image
 # --- Streamlit Config ---
 st.set_page_config(page_title="Employee Punctuality Dashboard", layout="wide")
 
-# Load Logo
-try:
-    logo = Image.open("download.jpeg")
-    st.sidebar.image(logo, width=200)
-except Exception:
-    st.sidebar.write("⚠️ Logo image not found. Make sure 'download.jpeg' is in the same folder.")
+import os
+curr_dir = os.path.dirname(__file__)
+image_path = os.path.join(curr_dir, "download.jpeg")
+
+if os.path.exists(image_path):
+    st.image(image_path, width=120)
+else:
+    st.warning("⚠️ Logo image not found.")
 
 # --- Title ---
 st.markdown("<h1 style='text-align: center; color: #4B8BBE;'>📊 Employee Productivity Dashboard | Diverse Infotech Pvt Ltd</h1>", unsafe_allow_html=True)
