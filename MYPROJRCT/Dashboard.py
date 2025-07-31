@@ -231,23 +231,16 @@ with tab2:
 
     st.write("Columns available:", df.columns.tolist())
 
-    total_employees = len(df)
+    total_employees = filtered_df['employee_id'].nunique()
 
-    if 'Punctuality' in df.columns:
-        punctuality_rate = df['Punctuality'].mean() * 100
-    else:
-        punctuality_rate = None
-
-    if 'Total Hours Worked' in df.columns:
-        avg_hours_worked = df['Total Hours Worked'].mean()
-    else:
-        avg_hours_worked = None
+    punctuality_rate = round(filtered_df['is_punctual'].mean() * 100, 2)
+    avg_hours_worked = round(filtered_df['hours_worked'].mean(), 2)
 
     st.markdown(f"""
     - **Total Employees:** `{total_employees}`
-    - **Punctuality Rate:** `{punctuality_rate:.2f}%`""" if punctuality_rate is not None else "- **Punctuality Rate:** `Not Available`")
-
-    st.markdown(f"""- **Average Hours Worked:** `{avg_hours_worked:.2f} hrs`""" if avg_hours_worked is not None else "- **Average Hours Worked:** `Not Available`")
+    - **Punctuality Rate:** `{punctuality_rate:.2f}%`
+    - **Average Hours Worked:** `{avg_hours_worked:.2f} hrs`
+    """)
 
     st.success("This summary gives a quick snapshot of overall team attendance and productivity.")
                   
