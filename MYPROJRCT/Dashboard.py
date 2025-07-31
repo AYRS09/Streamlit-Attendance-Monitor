@@ -6,12 +6,9 @@ import io
 import smtplib
 from email.message import EmailMessage
 from PIL import Image
-import os
-from datetime import datetime
-import calendar
 
-# --- Theme toggle ---
-theme = st.sidebar.radio("🌃 Choose Theme", ["Light", "Dark"])
+# Theme toggle
+theme = st.sidebar.radio("🌓 Choose Theme", ["Light", "Dark"])
 if theme == "Dark":
     st.markdown(
         """
@@ -27,17 +24,26 @@ if theme == "Dark":
 st.set_page_config(page_title="Employee Punctuality Dashboard", layout="wide")
 
 # --- Load Logo ---
+import os
+
 curr_dir = os.path.dirname(__file__)
 image_path = os.path.join(curr_dir, "download.jpeg")
+
 if os.path.exists(image_path):
     st.sidebar.image(image_path, width=120)
     st.sidebar.markdown("### 👋 Welcome to the Dashboard")
+    
 else:
     st.sidebar.warning("⚠️ Logo image not found.")
 
-# Show Last Updated Timestamp
+from datetime import datetime
+
+# Show Last Updated Timestamp on top-right
 now = datetime.now().strftime("%d %b %Y, %I:%M %p")
-st.markdown(f"<div style='text-align:right; color:gray; font-size:0.85rem;'>🕒 Last updated: {now}</div>", unsafe_allow_html=True)
+st.markdown(
+    f"<div style='text-align:right; color:gray; font-size:0.85rem;'>🕒 Last updated: {now}</div>",
+    unsafe_allow_html=True
+)
 
 # --- Title ---
 st.markdown("<h1 style='text-align: center; color: #4B8BBE;'>📊 Employee Productivity Dashboard | Diverse Infotech Pvt Ltd</h1>", unsafe_allow_html=True)
@@ -77,71 +83,78 @@ for in_col, out_col in zip(in_cols, out_cols):
     except Exception as e:
         st.warning(f"⚠️ Error calculating hours for {in_col} & {out_col}: {e}")
 
-# Remove duplicates and keep max hours
-if 'employee_id' not in df.columns:
-    st.error("❌ Missing required column: 'employee_id'")
-    st.stop()
-
+# Step 1: Drop perfect duplicate rows, if any
 df.drop_duplicates(inplace=True)
+
+# Step 2: Check for employees with multiple rows
+duplicate_ids = df['employee_id'].value_counts()
+duplicate_ids = duplicate_ids[duplicate_ids > 1]
+
+# Optional Debug Info
+if not duplicate_ids.empty:
+    st.warning("⚠️ Found duplicate entries for these employee IDs:")
+    st.dataframe(df[df['employee_id'].isin(duplicate_ids.index)])
+
+# Step 3: Combine duplicates by taking the row with max total hours
+# Sum hours across all 'hours_' columns
 df['total_hours'] = df[[col for col in df.columns if col.startswith('hours_')]].sum(axis=1)
+
+# Keep only the row with max total hours per employee_id
 df = df.sort_values('total_hours', ascending=False).drop_duplicates(subset=['employee_id'], keep='first')
+
+# Drop the helper column
 df.drop(columns='total_hours', inplace=True)
 
 # --- Day Columns ---
 day_cols = sorted([col for col in df.columns if col.startswith('hours_')], key=lambda x: int(x.split('_')[1]))
 
-# --- Melt and create long dataframe ---
+# --- Melt for long format ---
 df_long = df.melt(
-    id_vars=['employee_id', 'employee_gender', 'employee_resident', 'employee_department'],
+    id_vars=[
+        'employee_id',
+        'employee_gender',
+        'employee_resident',
+        'employee_department'
+    ],
     value_vars=day_cols,
     var_name='day',
-    value_name='hours_worked')
+    value_name='hours_worked'
+)
+
+# Extract day number and convert to date
 df_long['day_num'] = df_long['day'].str.extract(r'(\d+)').astype(int)
+df_long['date'] = pd.to_datetime('2025-06-01') + pd.to_timedelta(df_long['day_num'] - 1, unit='D')
 
-# Extract and merge in_time and out_time
-in_df = df[['employee_id'] + in_cols].melt(id_vars='employee_id', var_name='day', value_name='in_time')
-out_df = df[['employee_id'] + out_cols].melt(id_vars='employee_id', var_name='day', value_name='out_time')
-in_df['day'] = in_df['day'].str.extract('in_(\d+)').astype(int)
-out_df['day'] = out_df['day'].str.extract('out_(\d+)').astype(int)
+# Add punctuality flag
+df_long['is_punctual'] = df_long['hours_worked'] >= 8
 
-# Merge
-merged = pd.merge(df_long, in_df, on=['employee_id', 'day'])
-merged = pd.merge(merged, out_df, on=['employee_id', 'day'])
-
-# Date logic
-base_date = datetime(2024, 7, 1)
-merged['date'] = pd.to_datetime(base_date) + pd.to_timedelta(merged['day'] - 1, unit='D')
-
-# Time and punctuality
-merged['in_time'] = pd.to_datetime(merged['in_time'], errors='coerce')
-merged['out_time'] = pd.to_datetime(merged['out_time'], errors='coerce')
-merged = merged.dropna(subset=['in_time', 'out_time'])
-merged['hours_worked'] = (merged['out_time'] - merged['in_time']).dt.total_seconds() / 3600
-merged['is_punctual'] = merged['hours_worked'] >= 8
-
-# --- Filters ---
+# --- Sidebar Filters ---
 st.sidebar.header("🔍 Filter Options")
-employees = sorted(merged['employee_id'].dropna().unique())
-selected_employee = st.sidebar.selectbox("👤 Select Employee", ["All"] + list(employees))
-residency = st.sidebar.selectbox("🏩 Resident Type", ["All", "Local", "Non-local"])
-departments = sorted(merged['employee_department'].dropna().unique())
-selected_departments = st.sidebar.multiselect("🏢 Select Department(s)", departments, default=departments)
+employees = sorted(df_long['employee_id'].dropna().unique())
+selected_employees = st.sidebar.selectbox("👤 Select Employee", options=["All"] + list(employees))
 
-min_date, max_date = merged['date'].min(), merged['date'].max()
-date_range = st.sidebar.date_input("🗓️ Select Date Range", [min_date, max_date], min_value=min_date, max_value=max_date)
+residency = st.sidebar.selectbox("🏩 Resident Type", options=["All", "Local", "Non-local"])
+departments = sorted(df_long['employee_department'].dropna().unique())
+selected_departments = st.sidebar.multiselect("🏢 Select Department(s)", options=departments, default=departments)
+
+# --- Date Range Filter ---
+st.sidebar.markdown("🗓️ **Date Range Filter**")
+min_date = df_long['date'].min()
+max_date = df_long['date'].max()
+date_range = st.sidebar.date_input("Select Date Range", [min_date, max_date], min_value=min_date, max_value=max_date)
 
 # --- Apply Filters ---
-filtered_df = merged[(merged['date'] >= pd.to_datetime(date_range[0])) & (merged['date'] <= pd.to_datetime(date_range[1]))]
-if selected_employee != "All":
-    filtered_df = filtered_df[filtered_df['employee_id'] == selected_employee]
+filtered_df = df_long[
+    (df_long['date'] >= pd.to_datetime(date_range[0])) &
+    (df_long['date'] <= pd.to_datetime(date_range[1]))
+].copy()
+
+if selected_employees != "All":
+    filtered_df = filtered_df[filtered_df['employee_id'] == selected_employees]
 if residency != "All":
     filtered_df = filtered_df[filtered_df['employee_resident'].str.lower() == residency.lower()]
 if selected_departments:
     filtered_df = filtered_df[filtered_df['employee_department'].isin(selected_departments)]
-
-# The rest of the visualization, download, and email sections remain the same
-# Let me know if you want those adjusted or included as well.
-
 
 # --- KPIs ---
 total_employees = filtered_df['employee_id'].nunique()
@@ -204,9 +217,7 @@ with tab1:
         fig_top5 = px.bar(top5, x='Employee ID', y='Punctual Days', color='Employee ID', text='Punctual Days')
         fig_top5.update_layout(showlegend=False)
         st.plotly_chart(fig_top5, use_container_width=True)
-
-    row4_col1, row4_col2 = st.columns(2)
-    with row4_col1:
+    with row3_col2:
         st.subheader("🚨 Top 5 Late Comers (Hours < 8)")
         bottom5 = filtered_df[filtered_df['is_punctual'] == False]['employee_id'].value_counts().nlargest(5).reset_index()
         bottom5.columns = ['Employee ID', 'Late Days']
@@ -214,84 +225,59 @@ with tab1:
         fig_bottom5.update_layout(showlegend=False)
         st.plotly_chart(fig_bottom5, use_container_width=True)
 
-    with row4_col2:
-        st.subheader("⚖️ Punctuality vs Late Days Comparison")
-        top_late_ids = bottom5['Employee ID'].tolist()
-        compare_df = filtered_df[filtered_df['employee_id'].isin(top_late_ids)]
-        compare_summary = compare_df.groupby(['employee_id', 'is_punctual']).size().reset_index(name='Count')
-        compare_summary['Status'] = compare_summary['is_punctual'].map({True: 'Punctual Days', False: 'Late Days'})
-        fig_compare = px.bar(compare_summary, x='employee_id', y='Count', color='Status', barmode='group')
-        st.plotly_chart(fig_compare, use_container_width=True)
-
 # --- Tab 2: Summary ---
 with tab2:
     st.subheader("📄 Executive Summary")
 
     st.write("Columns available:", df.columns.tolist())
 
-    total_employees = filtered_df['employee_id'].nunique()
+    total_employees = len(df)
 
-    punctuality_rate = round(filtered_df['is_punctual'].mean() * 100, 2)
-    avg_hours_worked = round(filtered_df['hours_worked'].mean(), 2)
+    if 'Punctuality' in df.columns:
+        punctuality_rate = df['Punctuality'].mean() * 100
+    else:
+        punctuality_rate = None
+
+    if 'Total Hours Worked' in df.columns:
+        avg_hours_worked = df['Total Hours Worked'].mean()
+    else:
+        avg_hours_worked = None
 
     st.markdown(f"""
     - **Total Employees:** {total_employees}
-    - **Punctuality Rate:** {punctuality_rate:.2f}%
-    - **Average Hours Worked:** {avg_hours_worked:.2f} hrs
-    """)
+    - **Punctuality Rate:** {punctuality_rate:.2f}%""" if punctuality_rate is not None else "- **Punctuality Rate:** Not Available")
+
+    st.markdown(f"""- **Average Hours Worked:** {avg_hours_worked:.2f} hrs""" if avg_hours_worked is not None else "- **Average Hours Worked:** Not Available")
 
     st.success("This summary gives a quick snapshot of overall team attendance and productivity.")
                   
 # --- Tab 3: Download ---
-with tab3:
-    st.subheader("📥 Download Processed Data")
+with tab2:
+    st.subheader("📄 Executive Summary")
 
-    # --- Ensure required columns exist ---
-    required_cols = {'employee_id', 'date', 'in_time', 'out_time', 'hours_worked', 'is_punctual'}
-    if not required_cols.issubset(filtered_df.columns):
-        st.error(f"❌ Missing columns in data for download. Required: {', '.join(required_cols)}")
-    else:
-        # Convert date column to datetime
-        filtered_df['date'] = pd.to_datetime(filtered_df['date'])
+    # Show available columns
+    st.write("Columns available:", df.columns.tolist())
 
-        # ✅ DAILY SUMMARY (Truly per-day)
-        daily_summary = filtered_df.groupby(['employee_id', 'date']).agg(
-            In_Time=('in_time', 'first'),
-            Out_Time=('out_time', 'first'),
-            Hours_Worked=('hours_worked', 'first'),
-            Punctual=('is_punctual', lambda x: 'Yes' if x.iloc[0] else 'No')
-        ).reset_index()
+    total_employees = len(df)
 
-        daily_summary['Hours_Worked'] = daily_summary['Hours_Worked'].round(2)
+    # Parse timestamps if not already parsed
+    df['in_time'] = pd.to_datetime(df['in_time'], errors='coerce')
+    df['out_time'] = pd.to_datetime(df['out_time'], errors='coerce')
 
-        st.markdown("### 📅 Download Daily Punctuality Summary")
-        st.download_button(
-            label="📄 Download Daily Summary CSV",
-            data=daily_summary.to_csv(index=False).encode('utf-8'),
-            file_name='daily_punctuality_summary.csv',
-            mime='text/csv'
-        )
+    # Calculate punctuality
+    df['is_punctual'] = df['in_time'].dt.time <= pd.to_datetime("09:15:00").time()
+    punctuality_rate = df['is_punctual'].mean() * 100
 
-        # ✅ MONTHLY SUMMARY (Grouped by Month)
-        filtered_df['month_year'] = filtered_df['date'].dt.to_period('M').astype(str)
+    # Calculate working hours (in hours)
+    df['working_hours'] = (df['out_time'] - df['in_time']).dt.total_seconds() / 3600
+    avg_hours_worked = df['working_hours'].mean()
 
-        monthly_summary_df = filtered_df.groupby(['employee_id', 'month_year']).agg(
-            Total_Days=('date', 'count'),
-            Punctual_Days=('is_punctual', lambda x: (x == True).sum()),
-            Late_Days=('is_punctual', lambda x: (x == False).sum()),
-            Punctuality_Rate=('is_punctual', lambda x: round((x == True).mean() * 100, 2)),
-            Avg_Hours_Worked=('hours_worked', 'mean')
-        ).reset_index()
+    # Summary
+    st.markdown(f"- **Total Employees:** {total_employees}")
+    st.markdown(f"- **Punctuality Rate:** {punctuality_rate:.2f}%")
+    st.markdown(f"- **Average Hours Worked:** {avg_hours_worked:.2f} hrs")
 
-        monthly_summary_df['Avg_Hours_Worked'] = monthly_summary_df['Avg_Hours_Worked'].round(2)
-
-        st.markdown("### 🗓️ Download Monthly Punctuality Summary")
-        st.download_button(
-            label="📄 Download Monthly Summary CSV",
-            data=monthly_summary_df.to_csv(index=False).encode('utf-8'),
-            file_name='monthly_punctuality_summary.csv',
-            mime='text/csv'
-        )
+    st.success("This summary gives a quick snapshot of overall team attendance and productivity.")
 
 # --- Tab 4: Email Summary ---
 with tab4:
@@ -309,18 +295,17 @@ with tab4:
                 msg['From'] = sender_email
                 msg['To'] = recipient_email
                 msg.set_content(
-                    "Hi,\n\nPlease find attached the daily and monthly employee attendance summary.\n\nRegards,\nDashboard System")
+                    "Hi,\n\nPlease find attached the latest employee attendance summary.\n\nRegards,\nDashboard System")
 
                 output = io.BytesIO()
                 with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                    daily_summary.to_excel(writer, index=False, sheet_name='Daily Summary')
-                    monthly_summary_df.to_excel(writer, index=False, sheet_name='Monthly Summary')
+                    df_export.to_excel(writer, index=False, sheet_name='Summary')
                 output.seek(0)
                 msg.add_attachment(
                     output.read(),
                     maintype='application',
                     subtype='vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    filename='EmployeeAttendanceSummary.xlsx'
+                    filename='EmployeeSummary.xlsx'
                 )
 
                 with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
