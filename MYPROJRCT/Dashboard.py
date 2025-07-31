@@ -217,7 +217,9 @@ with tab1:
         fig_top5 = px.bar(top5, x='Employee ID', y='Punctual Days', color='Employee ID', text='Punctual Days')
         fig_top5.update_layout(showlegend=False)
         st.plotly_chart(fig_top5, use_container_width=True)
-    with row3_col2:
+
+    row4_col1, row4_col2 = st.columns(2)
+    with row4_col1:
         st.subheader("🚨 Top 5 Late Comers (Hours < 8)")
         bottom5 = filtered_df[filtered_df['is_punctual'] == False]['employee_id'].value_counts().nlargest(5).reset_index()
         bottom5.columns = ['Employee ID', 'Late Days']
@@ -225,59 +227,78 @@ with tab1:
         fig_bottom5.update_layout(showlegend=False)
         st.plotly_chart(fig_bottom5, use_container_width=True)
 
+    with row4_col2:
+        st.subheader("⚖️ Punctuality vs Late Days Comparison")
+        top_late_ids = bottom5['Employee ID'].tolist()
+        compare_df = filtered_df[filtered_df['employee_id'].isin(top_late_ids)]
+        compare_summary = compare_df.groupby(['employee_id', 'is_punctual']).size().reset_index(name='Count')
+        compare_summary['Status'] = compare_summary['is_punctual'].map({True: 'Punctual Days', False: 'Late Days'})
+        fig_compare = px.bar(compare_summary, x='employee_id', y='Count', color='Status', barmode='group')
+        st.plotly_chart(fig_compare, use_container_width=True)
+
 # --- Tab 2: Summary ---
 with tab2:
     st.subheader("📄 Executive Summary")
 
     st.write("Columns available:", df.columns.tolist())
 
-    total_employees = len(df)
+    total_employees = filtered_df['employee_id'].nunique()
 
-    if 'Punctuality' in df.columns:
-        punctuality_rate = df['Punctuality'].mean() * 100
-    else:
-        punctuality_rate = None
-
-    if 'Total Hours Worked' in df.columns:
-        avg_hours_worked = df['Total Hours Worked'].mean()
-    else:
-        avg_hours_worked = None
+    punctuality_rate = round(filtered_df['is_punctual'].mean() * 100, 2)
+    avg_hours_worked = round(filtered_df['hours_worked'].mean(), 2)
 
     st.markdown(f"""
     - **Total Employees:** {total_employees}
-    - **Punctuality Rate:** {punctuality_rate:.2f}%""" if punctuality_rate is not None else "- **Punctuality Rate:** Not Available")
-
-    st.markdown(f"""- **Average Hours Worked:** {avg_hours_worked:.2f} hrs""" if avg_hours_worked is not None else "- **Average Hours Worked:** Not Available")
+    - **Punctuality Rate:** {punctuality_rate:.2f}%
+    - **Average Hours Worked:** {avg_hours_worked:.2f} hrs
+    """)
 
     st.success("This summary gives a quick snapshot of overall team attendance and productivity.")
                   
 # --- Tab 3: Download ---
-with tab2:
-    st.subheader("📄 Executive Summary")
+with tab3:
+    st.subheader("📥 Download Processed Data")
 
-    # Show available columns
-    st.write("Columns available:", df.columns.tolist())
+    # Daily Summary Download
+    daily_summary = filtered_df.groupby('employee_id').agg(
+        Total_Days=('date', 'count'),
+        Punctual_Days=('is_punctual', lambda x: (x == True).sum()),
+        Late_Days=('is_punctual', lambda x: (x == False).sum()),
+        Punctuality_Rate=('is_punctual', lambda x: round((x == True).mean() * 100, 2)),
+        Avg_Hours_Worked=('hours_worked', 'mean')
+    ).reset_index()
 
-    total_employees = len(df)
+    daily_summary['Avg_Hours_Worked'] = daily_summary['Avg_Hours_Worked'].round(2)
 
-    # Parse timestamps if not already parsed
-    df['in_time'] = pd.to_datetime(df['in_time'], errors='coerce')
-    df['out_time'] = pd.to_datetime(df['out_time'], errors='coerce')
+    st.markdown("### 📅 Download Daily Punctuality Summary")
+    st.download_button(
+        label="📄 Download Daily Summary CSV",
+        data=daily_summary.to_csv(index=False).encode('utf-8'),
+        file_name='daily_punctuality_summary.csv',
+        mime='text/csv'
+    )
 
-    # Calculate punctuality
-    df['is_punctual'] = df['in_time'].dt.time <= pd.to_datetime("09:15:00").time()
-    punctuality_rate = df['is_punctual'].mean() * 100
+    # Monthly Summary Download
+    st.markdown("### 🗓️ Download Monthly Punctuality Summary")
 
-    # Calculate working hours (in hours)
-    df['working_hours'] = (df['out_time'] - df['in_time']).dt.total_seconds() / 3600
-    avg_hours_worked = df['working_hours'].mean()
+    filtered_df['month_year'] = filtered_df['date'].dt.to_period('M').astype(str)
 
-    # Summary
-    st.markdown(f"- **Total Employees:** {total_employees}")
-    st.markdown(f"- **Punctuality Rate:** {punctuality_rate:.2f}%")
-    st.markdown(f"- **Average Hours Worked:** {avg_hours_worked:.2f} hrs")
+    monthly_summary_df = filtered_df.groupby(['employee_id', 'month_year']).agg(
+        Total_Days=('date', 'count'),
+        Punctual_Days=('is_punctual', lambda x: (x == True).sum()),
+        Late_Days=('is_punctual', lambda x: (x == False).sum()),
+        Punctuality_Rate=('is_punctual', lambda x: round((x == True).mean() * 100, 2)),
+        Avg_Hours_Worked=('hours_worked', 'mean')
+    ).reset_index()
 
-    st.success("This summary gives a quick snapshot of overall team attendance and productivity.")
+    monthly_summary_df['Avg_Hours_Worked'] = monthly_summary_df['Avg_Hours_Worked'].round(2)
+
+    st.download_button(
+        label="📄 Download Monthly Summary CSV",
+        data=monthly_summary_df.to_csv(index=False).encode('utf-8'),
+        file_name='monthly_punctuality_summary.csv',
+        mime='text/csv'
+    )
 
 # --- Tab 4: Email Summary ---
 with tab4:
@@ -295,17 +316,18 @@ with tab4:
                 msg['From'] = sender_email
                 msg['To'] = recipient_email
                 msg.set_content(
-                    "Hi,\n\nPlease find attached the latest employee attendance summary.\n\nRegards,\nDashboard System")
+                    "Hi,\n\nPlease find attached the daily and monthly employee attendance summary.\n\nRegards,\nDashboard System")
 
                 output = io.BytesIO()
                 with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                    df_export.to_excel(writer, index=False, sheet_name='Summary')
+                    daily_summary.to_excel(writer, index=False, sheet_name='Daily Summary')
+                    monthly_summary_df.to_excel(writer, index=False, sheet_name='Monthly Summary')
                 output.seek(0)
                 msg.add_attachment(
                     output.read(),
                     maintype='application',
                     subtype='vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    filename='EmployeeSummary.xlsx'
+                    filename='EmployeeAttendanceSummary.xlsx'
                 )
 
                 with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
