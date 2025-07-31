@@ -6,9 +6,12 @@ import io
 import smtplib
 from email.message import EmailMessage
 from PIL import Image
+import os
+from datetime import datetime
+import calendar
 
 # --- Theme toggle ---
-theme = st.sidebar.radio("🌓 Choose Theme", ["Light", "Dark"])
+theme = st.sidebar.radio("🌃 Choose Theme", ["Light", "Dark"])
 if theme == "Dark":
     st.markdown(
         """
@@ -24,26 +27,17 @@ if theme == "Dark":
 st.set_page_config(page_title="Employee Punctuality Dashboard", layout="wide")
 
 # --- Load Logo ---
-import os
-
 curr_dir = os.path.dirname(__file__)
 image_path = os.path.join(curr_dir, "download.jpeg")
-
 if os.path.exists(image_path):
     st.sidebar.image(image_path, width=120)
     st.sidebar.markdown("### 👋 Welcome to the Dashboard")
-    
 else:
     st.sidebar.warning("⚠️ Logo image not found.")
 
-from datetime import datetime
-
-# Show Last Updated Timestamp on top-right
+# Show Last Updated Timestamp
 now = datetime.now().strftime("%d %b %Y, %I:%M %p")
-st.markdown(
-    f"<div style='text-align:right; color:gray; font-size:0.85rem;'>🕒 Last updated: {now}</div>",
-    unsafe_allow_html=True
-)
+st.markdown(f"<div style='text-align:right; color:gray; font-size:0.85rem;'>🕒 Last updated: {now}</div>", unsafe_allow_html=True)
 
 # --- Title ---
 st.markdown("<h1 style='text-align: center; color: #4B8BBE;'>📊 Employee Productivity Dashboard | Diverse Infotech Pvt Ltd</h1>", unsafe_allow_html=True)
@@ -83,121 +77,71 @@ for in_col, out_col in zip(in_cols, out_cols):
     except Exception as e:
         st.warning(f"⚠️ Error calculating hours for {in_col} & {out_col}: {e}")
 
-# Step 1: Drop perfect duplicate rows, if any
+# Remove duplicates and keep max hours
+if 'employee_id' not in df.columns:
+    st.error("❌ Missing required column: 'employee_id'")
+    st.stop()
+
 df.drop_duplicates(inplace=True)
-
-# Step 2: Check for employees with multiple rows
-duplicate_ids = df['employee_id'].value_counts()
-duplicate_ids = duplicate_ids[duplicate_ids > 1]
-
-# Optional Debug Info
-if not duplicate_ids.empty:
-    st.warning("⚠️ Found duplicate entries for these employee IDs:")
-    st.dataframe(df[df['employee_id'].isin(duplicate_ids.index)])
-
-# Step 3: Combine duplicates by taking the row with max total hours
-# Sum hours across all 'hours_' columns
 df['total_hours'] = df[[col for col in df.columns if col.startswith('hours_')]].sum(axis=1)
-
-# Keep only the row with max total hours per employee_id
 df = df.sort_values('total_hours', ascending=False).drop_duplicates(subset=['employee_id'], keep='first')
-
-# Drop the helper column
 df.drop(columns='total_hours', inplace=True)
 
 # --- Day Columns ---
 day_cols = sorted([col for col in df.columns if col.startswith('hours_')], key=lambda x: int(x.split('_')[1]))
 
-# --- Melt for long format ---
+# --- Melt and create long dataframe ---
 df_long = df.melt(
-    id_vars=[
-        'employee_id',
-        'employee_gender',
-        'employee_resident',
-        'employee_department'
-    ],
+    id_vars=['employee_id', 'employee_gender', 'employee_resident', 'employee_department'],
     value_vars=day_cols,
     var_name='day',
-    value_name='hours_worked'
-)
-
-# Extract day number and convert to date
+    value_name='hours_worked')
 df_long['day_num'] = df_long['day'].str.extract(r'(\d+)').astype(int)
-df_long['date'] = pd.to_datetime('2025-06-01') + pd.to_timedelta(df_long['day_num'] - 1, unit='D')
 
-# Extract in_time and out_time from original df
-# Reset index so df and df_long row indices match
-df = df.reset_index(drop=True)
+# Extract and merge in_time and out_time
+in_df = df[['employee_id'] + in_cols].melt(id_vars='employee_id', var_name='day', value_name='in_time')
+out_df = df[['employee_id'] + out_cols].melt(id_vars='employee_id', var_name='day', value_name='out_time')
+in_df['day'] = in_df['day'].str.extract('in_(\d+)').astype(int)
+out_df['day'] = out_df['day'].str.extract('out_(\d+)').astype(int)
 
-# Add employee_id to each melted row before melting (assuming employee_id exists)
-id_vars = ['employee_id']
-in_cols = [col for col in df.columns if col.startswith('in_')]
-out_cols = [col for col in df.columns if col.startswith('out_')]
+# Merge
+merged = pd.merge(df_long, in_df, on=['employee_id', 'day'])
+merged = pd.merge(merged, out_df, on=['employee_id', 'day'])
 
-# Melt separately
-df_in = df[id_vars + in_cols].melt(id_vars=id_vars, var_name='day', value_name='in_time')
-df_out = df[id_vars + out_cols].melt(id_vars=id_vars, var_name='day', value_name='out_time')
+# Date logic
+base_date = datetime(2024, 7, 1)
+merged['date'] = pd.to_datetime(base_date) + pd.to_timedelta(merged['day'] - 1, unit='D')
 
-# Clean 'day' column to extract day number
-df_in['day'] = df_in['day'].str.extract('in_(\d+)').astype(int)
-df_out['day'] = df_out['day'].str.extract('out_(\d+)').astype(int)
+# Time and punctuality
+merged['in_time'] = pd.to_datetime(merged['in_time'], errors='coerce')
+merged['out_time'] = pd.to_datetime(merged['out_time'], errors='coerce')
+merged = merged.dropna(subset=['in_time', 'out_time'])
+merged['hours_worked'] = (merged['out_time'] - merged['in_time']).dt.total_seconds() / 3600
+merged['is_punctual'] = merged['hours_worked'] >= 8
 
-# Merge in_time and out_time on employee_id and day
-df_long = pd.merge(df_in, df_out, on=['employee_id', 'day'])
-
-# Add date (build using a base month and year)
-from datetime import datetime
-import calendar
-
-# Example: July 2024
-base_year = 2024
-base_month = 7
-
-df_long['date'] = pd.to_datetime(df_long['day'].apply(lambda d: f"{base_year}-{base_month:02d}-{d:02d}"), errors='coerce')
-
-# Drop rows where in_time or out_time is NaN
-df_long = df_long.dropna(subset=['in_time', 'out_time'])
-
-# Ensure in_time and out_time are datetime
-df_long['in_time'] = pd.to_datetime(df_long['in_time'], errors='coerce')
-df_long['out_time'] = pd.to_datetime(df_long['out_time'], errors='coerce')
-
-# Create hours_worked
-df_long['hours_worked'] = (df_long['out_time'] - df_long['in_time']).dt.total_seconds() / 3600
-
-# Determine punctuality (adjust logic as needed)
-df_long['is_punctual'] = df_long['in_time'].dt.time <= datetime.strptime("09:15", "%H:%M").time()
-
-# Add punctuality flag
-df_long['is_punctual'] = df_long['hours_worked'] >= 8
-
-# --- Sidebar Filters ---
+# --- Filters ---
 st.sidebar.header("🔍 Filter Options")
-employees = sorted(df_long['employee_id'].dropna().unique())
-selected_employees = st.sidebar.selectbox("👤 Select Employee", options=["All"] + list(employees))
+employees = sorted(merged['employee_id'].dropna().unique())
+selected_employee = st.sidebar.selectbox("👤 Select Employee", ["All"] + list(employees))
+residency = st.sidebar.selectbox("🏩 Resident Type", ["All", "Local", "Non-local"])
+departments = sorted(merged['employee_department'].dropna().unique())
+selected_departments = st.sidebar.multiselect("🏢 Select Department(s)", departments, default=departments)
 
-residency = st.sidebar.selectbox("🏩 Resident Type", options=["All", "Local", "Non-local"])
-departments = sorted(df_long['employee_department'].dropna().unique())
-selected_departments = st.sidebar.multiselect("🏢 Select Department(s)", options=departments, default=departments)
-
-# --- Date Range Filter ---
-st.sidebar.markdown("🗓️ **Date Range Filter**")
-min_date = df_long['date'].min()
-max_date = df_long['date'].max()
-date_range = st.sidebar.date_input("Select Date Range", [min_date, max_date], min_value=min_date, max_value=max_date)
+min_date, max_date = merged['date'].min(), merged['date'].max()
+date_range = st.sidebar.date_input("🗓️ Select Date Range", [min_date, max_date], min_value=min_date, max_value=max_date)
 
 # --- Apply Filters ---
-filtered_df = df_long[
-    (df_long['date'] >= pd.to_datetime(date_range[0])) &
-    (df_long['date'] <= pd.to_datetime(date_range[1]))
-].copy()
-
-if selected_employees != "All":
-    filtered_df = filtered_df[filtered_df['employee_id'] == selected_employees]
+filtered_df = merged[(merged['date'] >= pd.to_datetime(date_range[0])) & (merged['date'] <= pd.to_datetime(date_range[1]))]
+if selected_employee != "All":
+    filtered_df = filtered_df[filtered_df['employee_id'] == selected_employee]
 if residency != "All":
     filtered_df = filtered_df[filtered_df['employee_resident'].str.lower() == residency.lower()]
 if selected_departments:
     filtered_df = filtered_df[filtered_df['employee_department'].isin(selected_departments)]
+
+# The rest of the visualization, download, and email sections remain the same
+# Let me know if you want those adjusted or included as well.
+
 
 # --- KPIs ---
 total_employees = filtered_df['employee_id'].nunique()
