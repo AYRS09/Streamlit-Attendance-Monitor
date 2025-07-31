@@ -206,24 +206,6 @@ with tab1:
 
     row3_col1, row3_col2 = st.columns(2)
     with row3_col1:
-        st.subheader("🏆 Most Punctual Employee")
-    try:
-        df['in_time'] = pd.to_datetime(df['in_1'], format='%I:%M %p', errors='coerce')
-    except Exception as e:
-        st.warning("⚠️ Could not parse 'in_1' for punctuality analysis.")
-        df['in_time'] = pd.NaT
-
-    df['late_minutes'] = (df['in_time'].dt.hour * 60 + df['in_time'].dt.minute) - (9 * 60)
-    df['late_minutes'] = df['late_minutes'].apply(lambda x: x if x > 0 else 0)
-
-    avg_late_df = df.groupby('employee_id')['late_minutes'].mean().sort_values()
-    if not avg_late_df.empty:
-        most_punctual = avg_late_df.index[0]
-        lowest_avg_late = round(avg_late_df.iloc[0], 1)
-        st.success(f"**{most_punctual}**\n\nAvg Late: **{lowest_avg_late} mins**")
-    else:
-        st.info("No in-time data available for punctuality analysis.")
-    with row3_col1:
         st.subheader("📌 Resident Type vs Hours Worked")
         fig5 = px.box(filtered_df, x='employee_resident', y='hours_worked', color='employee_resident')
         st.plotly_chart(fig5, use_container_width=True)
@@ -235,13 +217,24 @@ with tab1:
         fig_top5 = px.bar(top5, x='Employee ID', y='Punctual Days', color='Employee ID', text='Punctual Days')
         fig_top5.update_layout(showlegend=False)
         st.plotly_chart(fig_top5, use_container_width=True)
-    with row3_col2:
+
+    row4_col1, row4_col2 = st.columns(2)
+    with row4_col1:
         st.subheader("🚨 Top 5 Late Comers (Hours < 8)")
         bottom5 = filtered_df[filtered_df['is_punctual'] == False]['employee_id'].value_counts().nlargest(5).reset_index()
         bottom5.columns = ['Employee ID', 'Late Days']
         fig_bottom5 = px.bar(bottom5, x='Employee ID', y='Late Days', color='Employee ID', text='Late Days')
         fig_bottom5.update_layout(showlegend=False)
         st.plotly_chart(fig_bottom5, use_container_width=True)
+
+    with row4_col2:
+        st.subheader("⚖️ Punctuality vs Late Days Comparison")
+        top_late_ids = bottom5['Employee ID'].tolist()
+        compare_df = filtered_df[filtered_df['employee_id'].isin(top_late_ids)]
+        compare_summary = compare_df.groupby(['employee_id', 'is_punctual']).size().reset_index(name='Count')
+        compare_summary['Status'] = compare_summary['is_punctual'].map({True: 'Punctual Days', False: 'Late Days'})
+        fig_compare = px.bar(compare_summary, x='employee_id', y='Count', color='Status', barmode='group')
+        st.plotly_chart(fig_compare, use_container_width=True)
 
 # --- Tab 2: Summary ---
 with tab2:
