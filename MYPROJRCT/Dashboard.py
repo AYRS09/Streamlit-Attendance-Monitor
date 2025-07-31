@@ -10,14 +10,16 @@ from PIL import Image
 # --- Streamlit Config ---
 st.set_page_config(page_title="Employee Punctuality Dashboard", layout="wide")
 
+# --- Load Logo ---
 import os
+
 curr_dir = os.path.dirname(__file__)
 image_path = os.path.join(curr_dir, "download.jpeg")
 
 if os.path.exists(image_path):
-    st.image(image_path, width=120)
+    st.sidebar.image(image_path, width=150)  # 👈 This places it in the sidebar
 else:
-    st.warning("⚠️ Logo image not found.")
+    st.sidebar.warning("⚠️ Logo image not found.")
 
 # --- Title ---
 st.markdown("<h1 style='text-align: center; color: #4B8BBE;'>📊 Employee Productivity Dashboard | Diverse Infotech Pvt Ltd</h1>", unsafe_allow_html=True)
