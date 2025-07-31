@@ -281,9 +281,10 @@ with tab3:
     # Monthly Summary Download
     st.markdown("### 🗓️ Download Monthly Punctuality Summary")
 
-    filtered_df['month_year'] = filtered_df['date'].dt.to_period('M').astype(str)
+    monthly_df = filtered_df.copy()
+    monthly_df['month_year'] = monthly_df['date'].dt.to_period('M').astype(str)
 
-    monthly_summary_df = filtered_df.groupby(['employee_id', 'month_year']).agg(
+    monthly_summary_df = monthly_df.groupby(['employee_id', 'month_year']).agg(
         Total_Days=('date', 'count'),
         Punctual_Days=('is_punctual', lambda x: (x == True).sum()),
         Late_Days=('is_punctual', lambda x: (x == False).sum()),
