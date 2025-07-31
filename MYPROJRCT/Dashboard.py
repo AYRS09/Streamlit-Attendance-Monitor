@@ -8,7 +8,7 @@ from email.message import EmailMessage
 from PIL import Image
 
 # --- Theme toggle ---
-theme = st.sidebar.radio("🌃 Choose Theme", ["Light", "Dark"])
+theme = st.sidebar.radio("🌓 Choose Theme", ["Light", "Dark"])
 if theme == "Dark":
     st.markdown(
         """
@@ -172,17 +172,114 @@ kpi3.metric("⏱️ Average Hours Worked", f"{avg_hours} hrs")
 st.markdown("---")
 
 # --- Tabs ---
-tab1, tab2, tab3, tab4 = st.tabs(["📊 Visualizations", "📋 Summary", "🗕️ Download", "📬 Email Summary"])
+tab1, tab2, tab3, tab4 = st.tabs(["📊 Visualizations", "📋 Summary", "📅 Download", "📬 Email Summary"])
 
 # --- Tab 1: Visualizations ---
-# (No changes needed in visualization)
+with tab1:
+    row1_col1, row1_col2 = st.columns(2)
+    with row1_col1:
+        st.subheader("📌 Total Hours Worked per Employee")
+        fig1 = px.bar(
+            filtered_df.groupby('employee_id')['hours_worked'].sum().reset_index(),
+            x='employee_id', y='hours_worked', color='hours_worked', color_continuous_scale='Greens')
+        st.plotly_chart(fig1, use_container_width=True)
+
+    with row1_col2:
+        st.subheader("📌 Punctuality Ratio per Employee")
+        punctual_summary = filtered_df.groupby(['employee_id', 'is_punctual']).size().reset_index(name='Count')
+        punctual_summary['Status'] = punctual_summary['is_punctual'].map({True: 'Met (≥8 hrs)', False: 'Not Met (<8 hrs)'})
+        fig2 = px.bar(punctual_summary, x='employee_id', y='Count', color='Status', barmode='stack')
+        st.plotly_chart(fig2, use_container_width=True)
+
+    row2_col1, row2_col2 = st.columns(2)
+    with row2_col1:
+        st.subheader("📌 Daily Productivity Heatmap")
+        heatmap_data = filtered_df.pivot_table(index='employee_id', columns='day_num', values='hours_worked')
+        fig3 = px.imshow(heatmap_data.astype(np.float32), aspect="auto", color_continuous_scale='YlGnBu')
+        st.plotly_chart(fig3, use_container_width=True)
+
+    with row2_col2:
+        st.subheader("📌 Overall Punctuality Ratio")
+        overall = filtered_df['is_punctual'].value_counts().rename({True: 'Met ≥8 hrs', False: 'Not Met <8 hrs'})
+        fig4 = px.pie(names=overall.index, values=overall.values)
+        st.plotly_chart(fig4, use_container_width=True)
+
+    row3_col1, row3_col2 = st.columns(2)
+    with row3_col1:
+        st.subheader("📌 Resident Type vs Hours Worked")
+        fig5 = px.box(filtered_df, x='employee_resident', y='hours_worked', color='employee_resident')
+        st.plotly_chart(fig5, use_container_width=True)
+
+    with row3_col2:
+        st.subheader("🏅 Top 5 Most Punctual Employees")
+        top5 = filtered_df[filtered_df['is_punctual'] == True]['employee_id'].value_counts().nlargest(5).reset_index()
+        top5.columns = ['Employee ID', 'Punctual Days']
+        fig_top5 = px.bar(top5, x='Employee ID', y='Punctual Days', color='Employee ID', text='Punctual Days')
+        fig_top5.update_layout(showlegend=False)
+        st.plotly_chart(fig_top5, use_container_width=True)
+
+    row4_col1, row4_col2 = st.columns(2)
+    with row4_col1:
+        st.subheader("🚨 Top 5 Late Comers (Hours < 8)")
+        bottom5 = filtered_df[filtered_df['is_punctual'] == False]['employee_id'].value_counts().nlargest(5).reset_index()
+        bottom5.columns = ['Employee ID', 'Late Days']
+        fig_bottom5 = px.bar(bottom5, x='Employee ID', y='Late Days', color='Employee ID', text='Late Days')
+        fig_bottom5.update_layout(showlegend=False)
+        st.plotly_chart(fig_bottom5, use_container_width=True)
+
+    with row4_col2:
+        st.subheader("⚖️ Punctuality vs Late Days Comparison")
+        top_late_ids = bottom5['Employee ID'].tolist()
+        compare_df = filtered_df[filtered_df['employee_id'].isin(top_late_ids)]
+        compare_summary = compare_df.groupby(['employee_id', 'is_punctual']).size().reset_index(name='Count')
+        compare_summary['Status'] = compare_summary['is_punctual'].map({True: 'Punctual Days', False: 'Late Days'})
+        fig_compare = px.bar(compare_summary, x='employee_id', y='Count', color='Status', barmode='group')
+        st.plotly_chart(fig_compare, use_container_width=True)
 
 # --- Tab 2: Summary ---
-# (No changes needed in summary)
+with tab2:
+    st.subheader("📄 Executive Summary")
 
+    st.write("Columns available:", df.columns.tolist())
+
+    total_employees = filtered_df['employee_id'].nunique()
+
+    punctuality_rate = round(filtered_df['is_punctual'].mean() * 100, 2)
+    avg_hours_worked = round(filtered_df['hours_worked'].mean(), 2)
+
+    st.markdown(f"""
+    - **Total Employees:** {total_employees}
+    - **Punctuality Rate:** {punctuality_rate:.2f}%
+    - **Average Hours Worked:** {avg_hours_worked:.2f} hrs
+    """)
+
+    st.success("This summary gives a quick snapshot of overall team attendance and productivity.")
+                  
 # --- Tab 3: Download ---
 with tab3:
-    st.subheader("📅 Download Monthly Summary")
+    st.subheader("📥 Download Processed Data")
+
+    # Daily Summary Download
+    daily_summary = filtered_df.groupby('employee_id').agg(
+        Total_Days=('date', 'count'),
+        Punctual_Days=('is_punctual', lambda x: (x == True).sum()),
+        Late_Days=('is_punctual', lambda x: (x == False).sum()),
+        Punctuality_Rate=('is_punctual', lambda x: round((x == True).mean() * 100, 2)),
+        Avg_Hours_Worked=('hours_worked', 'mean')
+    ).reset_index()
+
+    daily_summary['Avg_Hours_Worked'] = daily_summary['Avg_Hours_Worked'].round(2)
+
+    st.markdown("### 📅 Download Daily Punctuality Summary")
+    st.download_button(
+        label="📄 Download Daily Summary CSV",
+        data=daily_summary.to_csv(index=False).encode('utf-8'),
+        file_name='daily_punctuality_summary.csv',
+        mime='text/csv'
+    )
+
+    # Monthly Summary Download
+    st.markdown("### 🗓️ Download Monthly Punctuality Summary")
 
     filtered_df['month_year'] = filtered_df['date'].dt.to_period('M').astype(str)
 
@@ -215,21 +312,22 @@ with tab4:
         with st.spinner("📤 Sending email..."):
             try:
                 msg = EmailMessage()
-                msg['Subject'] = "Employee Monthly Attendance Summary"
+                msg['Subject'] = "Employee Attendance Summary"
                 msg['From'] = sender_email
                 msg['To'] = recipient_email
                 msg.set_content(
-                    "Hi,\n\nPlease find attached the monthly employee attendance summary.\n\nRegards,\nDashboard System")
+                    "Hi,\n\nPlease find attached the daily and monthly employee attendance summary.\n\nRegards,\nDashboard System")
 
                 output = io.BytesIO()
                 with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                    daily_summary.to_excel(writer, index=False, sheet_name='Daily Summary')
                     monthly_summary_df.to_excel(writer, index=False, sheet_name='Monthly Summary')
                 output.seek(0)
                 msg.add_attachment(
                     output.read(),
                     maintype='application',
                     subtype='vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    filename='EmployeeMonthlySummary.xlsx'
+                    filename='EmployeeAttendanceSummary.xlsx'
                 )
 
                 with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
