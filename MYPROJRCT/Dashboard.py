@@ -252,32 +252,6 @@ with tab3:
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-# --- Tab 3: Download ---
-with tab3:
-    st.subheader("📅 Download Filtered Summary")
-    df_export = filtered_df.copy()
-    df_export['day'] = df_export['day_num'].astype(str)
-    df_export['is_punctual'] = df_export['is_punctual'].map({True: 'Yes', False: 'No'})
-    df_export.rename(columns={
-        'employee_id': 'Employee ID',
-        'employee_gender': 'Gender',
-        'employee_resident': 'Resident Type',
-        'employee_department': 'Department',
-        'day': 'Day',
-        'hours_worked': 'Hours Worked',
-        'is_punctual': 'Punctual (≥8 hrs)'
-    }, inplace=True)
-
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df_export.to_excel(writer, index=False, sheet_name='Summary')
-    st.download_button(
-        label="⬇️ Download Excel Summary",
-        data=output.getvalue(),
-        file_name="employee_attendance_summary.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-
 # --- Tab 4: Email Summary ---
 with tab4:
     st.subheader("📬 Email Summary to Manager")
