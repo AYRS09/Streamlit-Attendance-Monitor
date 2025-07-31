@@ -229,15 +229,25 @@ with tab1:
 with tab2:
     st.subheader("📄 Executive Summary")
 
+    st.write("Columns available:", df.columns.tolist())
+
     total_employees = len(df)
-    punctuality_rate = df['Punctuality'].mean() * 100
-    avg_hours_worked = df['Total Hours Worked'].mean()
+
+    if 'Punctuality' in df.columns:
+        punctuality_rate = df['Punctuality'].mean() * 100
+    else:
+        punctuality_rate = None
+
+    if 'Total Hours Worked' in df.columns:
+        avg_hours_worked = df['Total Hours Worked'].mean()
+    else:
+        avg_hours_worked = None
 
     st.markdown(f"""
     - **Total Employees:** `{total_employees}`
-    - **Punctuality Rate:** `{punctuality_rate:.2f}%`
-    - **Average Hours Worked:** `{avg_hours_worked:.2f} hrs`
-    """)
+    - **Punctuality Rate:** `{punctuality_rate:.2f}%`""" if punctuality_rate is not None else "- **Punctuality Rate:** `Not Available`")
+
+    st.markdown(f"""- **Average Hours Worked:** `{avg_hours_worked:.2f} hrs`""" if avg_hours_worked is not None else "- **Average Hours Worked:** `Not Available`")
 
     st.success("This summary gives a quick snapshot of overall team attendance and productivity.")
                   
