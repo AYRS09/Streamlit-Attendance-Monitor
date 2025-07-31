@@ -126,9 +126,47 @@ df_long['day_num'] = df_long['day'].str.extract(r'(\d+)').astype(int)
 df_long['date'] = pd.to_datetime('2025-06-01') + pd.to_timedelta(df_long['day_num'] - 1, unit='D')
 
 # Extract in_time and out_time from original df
-df_long['day_num'] = df_long['date'].dt.day
-df_long['in_time'] = df_long.apply(lambda row: df.loc[row.name, f'in_{int(row["day_num"])}'] if f'in_{int(row["day_num"])}' in df.columns else np.nan, axis=1)
-df_long['out_time'] = df_long.apply(lambda row: df.loc[row.name, f'out_{int(row["day_num"])}'] if f'out_{int(row["day_num"])}' in df.columns else np.nan, axis=1)
+# Reset index so df and df_long row indices match
+df = df.reset_index(drop=True)
+
+# Add employee_id to each melted row before melting (assuming employee_id exists)
+id_vars = ['employee_id']
+in_cols = [col for col in df.columns if col.startswith('in_')]
+out_cols = [col for col in df.columns if col.startswith('out_')]
+
+# Melt separately
+df_in = df[id_vars + in_cols].melt(id_vars=id_vars, var_name='day', value_name='in_time')
+df_out = df[id_vars + out_cols].melt(id_vars=id_vars, var_name='day', value_name='out_time')
+
+# Clean 'day' column to extract day number
+df_in['day'] = df_in['day'].str.extract('in_(\d+)').astype(int)
+df_out['day'] = df_out['day'].str.extract('out_(\d+)').astype(int)
+
+# Merge in_time and out_time on employee_id and day
+df_long = pd.merge(df_in, df_out, on=['employee_id', 'day'])
+
+# Add date (build using a base month and year)
+from datetime import datetime
+import calendar
+
+# Example: July 2024
+base_year = 2024
+base_month = 7
+
+df_long['date'] = pd.to_datetime(df_long['day'].apply(lambda d: f"{base_year}-{base_month:02d}-{d:02d}"), errors='coerce')
+
+# Drop rows where in_time or out_time is NaN
+df_long = df_long.dropna(subset=['in_time', 'out_time'])
+
+# Ensure in_time and out_time are datetime
+df_long['in_time'] = pd.to_datetime(df_long['in_time'], errors='coerce')
+df_long['out_time'] = pd.to_datetime(df_long['out_time'], errors='coerce')
+
+# Create hours_worked
+df_long['hours_worked'] = (df_long['out_time'] - df_long['in_time']).dt.total_seconds() / 3600
+
+# Determine punctuality (adjust logic as needed)
+df_long['is_punctual'] = df_long['in_time'].dt.time <= datetime.strptime("09:15", "%H:%M").time()
 
 # Add punctuality flag
 df_long['is_punctual'] = df_long['hours_worked'] >= 8
