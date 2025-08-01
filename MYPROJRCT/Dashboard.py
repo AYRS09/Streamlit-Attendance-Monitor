@@ -53,6 +53,28 @@ st.markdown("<h4 style='text-align: center; color: gray;'>Punctuality & Producti
 st.sidebar.markdown("---")
 st.sidebar.subheader("📄 Upload Attendance Sheet")
 file = st.sidebar.file_uploader("Upload Excel/CSV File", type=["xlsx", "xls", "csv"])
+sample_data = {
+    'employee_id': ['E001', 'E002'],
+    'employee_gender': ['Male', 'Female'],
+    'employee_resident': ['Local', 'Non-local'],
+    'employee_department': ['IT', 'HR'],
+    'in_1': ['09:00 AM', '09:15 AM'],
+    'out_1': ['06:00 PM', '06:10 PM'],
+    'in_2': ['09:05 AM', '09:00 AM'],
+    'out_2': ['06:10 PM', '06:15 PM']
+}
+sample_df = pd.DataFrame(sample_data)
+
+buffer = io.BytesIO()
+sample_df.to_excel(buffer, index=False)
+buffer.seek(0)
+
+st.sidebar.download_button(
+    label="⬇️ Download Sample Excel Format",
+    data=buffer,
+    file_name="sample_attendance_format.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
 st.sidebar.info("ℹ️ Upload your Excel or CSV attendance file to view the dashboard.")
 st.sidebar.markdown("---")
 
