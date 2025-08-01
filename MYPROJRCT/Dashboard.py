@@ -1,72 +1,4 @@
 import streamlit as st
-import base64
-
-# --- ✅ Custom Dark Theme Styling ---
-st.markdown("""
-    <style>
-    /* Main background and text */
-    body {
-        background-color: #0d1117;
-        color: #c9d1d9;
-    }
-
-    /* Page container */
-    .stApp {
-        background-color: #0d1117;
-        color: #c9d1d9;
-    }
-
-    /* Sidebar */
-    section[data-testid="stSidebar"] {
-        background-color: #161b22;
-        color: #c9d1d9;
-    }
-
-    /* Widgets and text */
-    .stTextInput>div>div>input,
-    .stSelectbox>div>div>div>input,
-    .stDownloadButton>button,
-    .stButton>button {
-        background-color: #21262d;
-        color: #f0f6fc;
-        border: 1px solid #30363d;
-        border-radius: 8px;
-        padding: 6px 12px;
-    }
-
-    .stButton>button:hover,
-    .stDownloadButton>button:hover {
-        background-color: #238636;
-        transform: scale(1.01);
-    }
-
-    /* Headers and markdown */
-    h1, h2, h3, h4, h5 {
-        color: #58a6ff;
-        font-family: 'Segoe UI', sans-serif;
-    }
-
-    /* Add a simple fade-in animation */
-    .stApp {
-        animation: fadein 1.5s ease-in;
-    }
-
-    @keyframes fadein {
-        from {opacity: 0;}
-        to {opacity: 1;}
-    }
-
-    /* Scrollbar */
-    ::-webkit-scrollbar {
-        width: 8px;
-    }
-    ::-webkit-scrollbar-thumb {
-        background: #30363d;
-        border-radius: 4px;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
 import pandas as pd
 import plotly.express as px
 import numpy as np
@@ -116,6 +48,61 @@ st.markdown(
 # --- Title ---
 st.markdown("<h1 style='text-align: center; color: #4B8BBE;'>📊 Employee Productivity Dashboard | Diverse Infotech Pvt Ltd</h1>", unsafe_allow_html=True)
 st.markdown("<h4 style='text-align: center; color: gray;'>Punctuality & Productivity Analysis Based on Daily Hours Worked</h4>", unsafe_allow_html=True)
+
+import streamlit as st
+import pandas as pd
+import io
+import os
+
+# --- Dark Theme Background Setup ---
+st.set_page_config(page_title="Employee Attendance Dashboard", layout="wide")
+
+# --- Page Animation/Header ---
+st.markdown(
+    """
+    <style>
+    /* Dark background */
+    .stApp {
+        background-color: #121212;
+        color: #FFFFFF;
+    }
+    /* Sidebar styling */
+    section[data-testid="stSidebar"] {
+        background-color: #1E1E1E;
+    }
+    /* Headers and titles */
+    h1, h2, h3, h4 {
+        color: #00C7FF;
+    }
+    /* Buttons and widgets */
+    .stButton>button {
+        background-color: #00C7FF;
+        color: black;
+        font-weight: bold;
+        border-radius: 10px;
+    }
+    .stDownloadButton > button {
+        background-color: #FFD700;
+        color: black;
+        font-weight: bold;
+        border-radius: 10px;
+    }
+    .stTextInput>div>div>input {
+        background-color: #333333;
+        color: white;
+    }
+    .css-1cpxqw2 {
+        background-color: #333333 !important;
+        color: white !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+st.markdown("## 🚀 Employee Attendance Dashboard")
+st.markdown("Welcome! Upload your Excel/CSV attendance file in the sidebar 👉")
+
 
 # --- File Upload ---
 st.sidebar.markdown("---")
