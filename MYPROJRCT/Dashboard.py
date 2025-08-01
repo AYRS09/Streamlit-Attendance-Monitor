@@ -53,9 +53,6 @@ import streamlit as st
 import pandas as pd
 import io
 import os
-
-st.set_page_config(page_title="Employee Attendance Dashboard", layout="wide")
-
 st.markdown(
     """
     <style>
