@@ -1,4 +1,51 @@
 import streamlit as st
+# 🔧 Custom CSS Styling for Dark Theme and Animation
+st.markdown("""
+    <style>
+        /* Dark background for entire app */
+        .main {
+            background-color: #0D1117;
+            color: #EDEDED;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        /* Sidebar dark styling */
+        .css-1d391kg, .css-1v3fvcr {
+            background-color: #161B22 !important;
+            color: #EDEDED;
+        }
+        /* Animated Header */
+        .css-10trblm {
+            animation: fadein 2s ease-in;
+        }
+        @keyframes fadein {
+            from { opacity: 0; transform: translateY(-10px); }
+            to   { opacity: 1; transform: translateY(0px); }
+        }
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #30363D;
+            border-radius: 4px;
+        }
+        /* Buttons and widgets */
+        .stButton>button, .stDownloadButton>button {
+            background-color: #238636;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.5em 1em;
+            font-weight: bold;
+            transition: 0.3s ease;
+        }
+        .stButton>button:hover, .stDownloadButton>button:hover {
+            background-color: #2EA043;
+            transform: scale(1.02);
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 import pandas as pd
 import plotly.express as px
 import numpy as np
