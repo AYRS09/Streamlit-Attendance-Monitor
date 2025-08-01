@@ -1,48 +1,69 @@
 import streamlit as st
-# 🔧 Custom CSS Styling for Dark Theme and Animation
+import base64
+
+# --- ✅ Custom Dark Theme Styling ---
 st.markdown("""
     <style>
-        /* Dark background for entire app */
-        .main {
-            background-color: #0D1117;
-            color: #EDEDED;
-            font-family: 'Segoe UI', sans-serif;
-        }
-        /* Sidebar dark styling */
-        .css-1d391kg, .css-1v3fvcr {
-            background-color: #161B22 !important;
-            color: #EDEDED;
-        }
-        /* Animated Header */
-        .css-10trblm {
-            animation: fadein 2s ease-in;
-        }
-        @keyframes fadein {
-            from { opacity: 0; transform: translateY(-10px); }
-            to   { opacity: 1; transform: translateY(0px); }
-        }
-        /* Scrollbar styling */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #30363D;
-            border-radius: 4px;
-        }
-        /* Buttons and widgets */
-        .stButton>button, .stDownloadButton>button {
-            background-color: #238636;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 0.5em 1em;
-            font-weight: bold;
-            transition: 0.3s ease;
-        }
-        .stButton>button:hover, .stDownloadButton>button:hover {
-            background-color: #2EA043;
-            transform: scale(1.02);
-        }
+    /* Main background and text */
+    body {
+        background-color: #0d1117;
+        color: #c9d1d9;
+    }
+
+    /* Page container */
+    .stApp {
+        background-color: #0d1117;
+        color: #c9d1d9;
+    }
+
+    /* Sidebar */
+    section[data-testid="stSidebar"] {
+        background-color: #161b22;
+        color: #c9d1d9;
+    }
+
+    /* Widgets and text */
+    .stTextInput>div>div>input,
+    .stSelectbox>div>div>div>input,
+    .stDownloadButton>button,
+    .stButton>button {
+        background-color: #21262d;
+        color: #f0f6fc;
+        border: 1px solid #30363d;
+        border-radius: 8px;
+        padding: 6px 12px;
+    }
+
+    .stButton>button:hover,
+    .stDownloadButton>button:hover {
+        background-color: #238636;
+        transform: scale(1.01);
+    }
+
+    /* Headers and markdown */
+    h1, h2, h3, h4, h5 {
+        color: #58a6ff;
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    /* Add a simple fade-in animation */
+    .stApp {
+        animation: fadein 1.5s ease-in;
+    }
+
+    @keyframes fadein {
+        from {opacity: 0;}
+        to {opacity: 1;}
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #30363d;
+        border-radius: 4px;
+    }
     </style>
 """, unsafe_allow_html=True)
 
