@@ -263,20 +263,23 @@ with tab1:
 with tab2:
     st.subheader("📄 Executive Summary")
 
-    st.write("Columns available:", df.columns.tolist())
-
+    # Core Metrics
     total_employees = filtered_df['employee_id'].nunique()
-
-    punctuality_rate = round(filtered_df['is_punctual'].mean() * 100, 2)
+    total_days = filtered_df['date'].nunique()
+    total_records = len(filtered_df)
+    total_punctual = filtered_df[filtered_df['is_punctual']].shape[0]
     avg_hours_worked = round(filtered_df['hours_worked'].mean(), 2)
+    punctuality_rate = round((total_punctual / total_records) * 100, 2) if total_records else 0.0
 
+    # Insights
     st.markdown(f"""
-    - **Total Employees:** {total_employees}
-    - **Punctuality Rate:** {punctuality_rate:.2f}%
-    - **Average Hours Worked:** {avg_hours_worked:.2f} hrs
-    """)
+    #### 🧾 Attendance Overview
+    - **Total Employees Analysed:** {total_employees}
+    - **Total Attendance Records:** {total_records}
+    - **Total Unique Days Tracked:** {total_days}
 
-    st.success("This summary gives a quick snapshot of overall team attendance and productivity.")
+    #### ⏱️ Work Hours Insights
+    - **Average Daily Hours Worked:** {avg_hours_worked:.2f} hou
 
 # --- Tab 3: Download ---
 with tab3:
