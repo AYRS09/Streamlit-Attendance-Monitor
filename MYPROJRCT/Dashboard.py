@@ -123,7 +123,13 @@ df_long = df.melt(
 
 # Extract day number and convert to date
 df_long['day_num'] = df_long['day'].str.extract(r'(\d+)').astype(int)
-df_long['date'] = pd.to_datetime('2025-06-01') + pd.to_timedelta(df_long['day_num'] - 1, unit='D')
+
+# Ask user to select the start date of attendance
+st.sidebar.markdown("📆 **Select Start Date of Attendance**")
+start_date = st.sidebar.date_input("Start Date", value=datetime(2025, 6, 1))
+
+# Convert to actual date using selected start date
+df_long['date'] = pd.to_datetime(start_date) + pd.to_timedelta(df_long['day_num'] - 1, unit='D')
 
 # Add punctuality flag
 df_long['is_punctual'] = df_long['hours_worked'] >= 8
