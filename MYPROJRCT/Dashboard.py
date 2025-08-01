@@ -46,15 +46,8 @@ st.markdown(
 )
 
 # --- Title ---
-st.markdown("<h1 style='text-align: center; color: #4B8BBE;'>📊 Employee Productivity Dashboard | Diverse Infotech Pvt Ltd</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: #4B8BBE;'>🚀 Employee Productivity Dashboard 🚀| Diverse Infotech Pvt Ltd</h1>", unsafe_allow_html=True)
 st.markdown("<h4 style='text-align: center; color: gray;'>Punctuality & Productivity Analysis Based on Daily Hours Worked</h4>", unsafe_allow_html=True)
-
-import streamlit as st
-import pandas as pd
-import io
-import os
-import streamlit as st
-
 st.set_page_config(page_title="Employee Attendance Dashboard", layout="wide")
 
 st.markdown("""
@@ -139,11 +132,6 @@ st.markdown("""
     }
     </style>
 """, unsafe_allow_html=True)
-
-# Example UI Titles
-st.markdown("<h1>📊 Employee Productivity Dashboard | Diverse Infotech Pvt Ltd</h1>", unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Punctuality & Productivity Analysis Based on Daily Hours Worked</p>', unsafe_allow_html=True)
-st.markdown("## 🚀 Employee Attendance Dashboard")
 
 # --- File Upload ---
 st.sidebar.markdown("---")
