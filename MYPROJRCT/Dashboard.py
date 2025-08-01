@@ -279,7 +279,15 @@ with tab2:
     - **Total Unique Days Tracked:** {total_days}
 
     #### ⏱️ Work Hours Insights
-    - **Average Daily Hours Worked:** {avg_hours_worked:.2f} hou
+    - **Average Daily Hours Worked:** {avg_hours_worked:.2f} hours
+    - **Employees Meeting 8+ Hours Criteria:** {total_punctual} entries
+
+    #### ✅ Punctuality Insights
+    - **Overall Punctuality Rate:** {punctuality_rate:.2f}%
+    - **Standard Threshold:** Employees are considered **punctual** if they work **≥ 8 hours per day**
+    """)
+
+    st.success("This detailed summary provides a managerial view of employee attendance patterns, average productivity, and organizational discipline levels.")
 
 # --- Tab 3: Download ---
 with tab3:
