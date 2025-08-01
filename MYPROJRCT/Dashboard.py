@@ -196,9 +196,87 @@ tab1, tab2, tab3, tab4 = st.tabs(["📊 Visualizations", "📋 Summary", "📅 D
 
 # --- Tab 1: Visualizations ---
 with tab1:
+    # Centered title
     st.markdown("<h2 style='text-align: center; color: white;'>📊 Employee Attendance Visualizations</h2>", unsafe_allow_html=True)
 
-    # (Charts remain unchanged, omitted here for brevity—you already did excellent work.)
+    row1_col1, row1_col2 = st.columns(2)
+    with row1_col1:
+        st.subheader("⏱️ Total Hours Worked per Employee")
+        fig1 = px.bar(
+            filtered_df.groupby('employee_id')['hours_worked'].sum().reset_index(),
+            x='employee_id', y='hours_worked', color='hours_worked', color_continuous_scale='Greens')
+        st.plotly_chart(fig1, use_container_width=True)
+
+    with row1_col2:
+        st.subheader("⏰ Punctuality Ratio per Employee")
+        punctual_summary = filtered_df.groupby(['employee_id', 'is_punctual']).size().reset_index(name='Count')
+        punctual_summary['Status'] = punctual_summary['is_punctual'].map({True: 'Met (≥8 hrs)', False: 'Not Met (<8 hrs)'})
+        fig2 = px.bar(punctual_summary, x='employee_id', y='Count', color='Status', barmode='stack')
+        st.plotly_chart(fig2, use_container_width=True)
+
+    row2_col1, row2_col2 = st.columns(2)
+    with row2_col1:
+        st.subheader("🗓️ Daily Productivity Heatmap")
+        heatmap_data = filtered_df.pivot_table(index='employee_id', columns='day_num', values='hours_worked')
+        fig3 = px.imshow(heatmap_data.astype(np.float32), aspect="auto", color_continuous_scale='YlGnBu')
+        st.plotly_chart(fig3, use_container_width=True)
+
+    with row2_col2:
+        st.subheader("📈 Overall Punctuality Ratio")
+        overall = filtered_df['is_punctual'].value_counts().rename({True: 'Met ≥8 hrs', False: 'Not Met <8 hrs'})
+        fig4 = px.pie(names=overall.index, values=overall.values)
+        st.plotly_chart(fig4, use_container_width=True)
+
+    row3_col1, row3_col2 = st.columns(2)
+    with row3_col1:
+        st.subheader("🏘️ Resident Type vs Hours Worked")
+        fig5 = px.box(filtered_df, x='employee_resident', y='hours_worked', color='employee_resident')
+        st.plotly_chart(fig5, use_container_width=True)
+
+    with row3_col2:
+        st.subheader("🏅 Top 5 Most Punctual Employees")
+        top5 = filtered_df[filtered_df['is_punctual'] == True]['employee_id'].value_counts().nlargest(5).reset_index()
+        top5.columns = ['Employee ID', 'Punctual Days']
+        fig_top5 = px.bar(top5, x='Employee ID', y='Punctual Days', color='Employee ID', text='Punctual Days')
+        fig_top5.update_layout(showlegend=False)
+        st.plotly_chart(fig_top5, use_container_width=True)
+
+    row4_col1, row4_col2 = st.columns(2)
+    with row4_col1:
+        st.subheader("🚨 Top 5 Late Comers (Hours < 8)")
+        bottom5 = filtered_df[filtered_df['is_punctual'] == False]['employee_id'].value_counts().nlargest(5).reset_index()
+        bottom5.columns = ['Employee ID', 'Late Days']
+        fig_bottom5 = px.bar(bottom5, x='Employee ID', y='Late Days', color='Employee ID', text='Late Days')
+        fig_bottom5.update_layout(showlegend=False)
+        st.plotly_chart(fig_bottom5, use_container_width=True)
+
+    with row4_col2:
+        st.subheader("⚖️ Punctuality vs Late Days Comparison")
+        top_late_ids = bottom5['Employee ID'].tolist()
+        compare_df = filtered_df[filtered_df['employee_id'].isin(top_late_ids)]
+        compare_summary = compare_df.groupby(['employee_id', 'is_punctual']).size().reset_index(name='Count')
+        compare_summary['Status'] = compare_summary['is_punctual'].map({True: 'Punctual Days', False: 'Late Days'})
+        fig_compare = px.bar(compare_summary, x='employee_id', y='Count', color='Status', barmode='group')
+        st.plotly_chart(fig_compare, use_container_width=True)
+
+# --- Tab 2: Summary ---
+with tab2:
+    st.subheader("📄 Executive Summary")
+
+    st.write("Columns available:", df.columns.tolist())
+
+    total_employees = filtered_df['employee_id'].nunique()
+
+    punctuality_rate = round(filtered_df['is_punctual'].mean() * 100, 2)
+    avg_hours_worked = round(filtered_df['hours_worked'].mean(), 2)
+
+    st.markdown(f"""
+    - **Total Employees:** {total_employees}
+    - **Punctuality Rate:** {punctuality_rate:.2f}%
+    - **Average Hours Worked:** {avg_hours_worked:.2f} hrs
+    """)
+
+    st.success("This summary gives a quick snapshot of overall team attendance and productivity.")
 
 # --- Tab 2: Summary ---
 with tab2:
