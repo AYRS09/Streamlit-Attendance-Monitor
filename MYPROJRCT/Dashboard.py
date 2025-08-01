@@ -120,21 +120,16 @@ df_long = df.melt(
     var_name='day',
     value_name='hours_worked'
 )
-# 📅 Create actual date column based on selected start date
-df_long['day_num'] = df_long['day'].str.extract(r'(\d+)').astype(int)
-df_long['date'] = pd.to_datetime(start_date) + pd.to_timedelta(df_long['day_num'] - 1, unit='D')
 
-# Ask user to select the start date of attendance
-st.sidebar.markdown("📆 **Select Start Date of Attendance**")
-start_date = st.sidebar.date_input("Start Date", value=datetime(2025, 6, 1))
+# Extract day number and convert to date
+df_long['day_num'] = df_long['day'].str.extract(r'(\d+)').astype(int)
+df_long['date'] = pd.to_datetime('2025-06-01') + pd.to_timedelta(df_long['day_num'] - 1, unit='D')
 
 # Add punctuality flag
 df_long['is_punctual'] = df_long['hours_worked'] >= 8
 
 # --- Sidebar Filters ---
 st.sidebar.header("🔍 Filter Options")
-st.sidebar.markdown("📆 **Select Start Date of Attendance**")
-start_date = st.sidebar.date_input("Start Date", value=datetime(2025, 6, 1))
 employees = sorted(df_long['employee_id'].dropna().unique())
 selected_employees = st.sidebar.selectbox("👤 Select Employee", options=["All"] + list(employees))
 
