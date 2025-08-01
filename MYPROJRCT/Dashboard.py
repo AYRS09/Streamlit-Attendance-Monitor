@@ -46,7 +46,7 @@ st.markdown(
 )
 
 # --- Title ---
-st.markdown("<h1 style='text-align: center; color: #4B8BBE;'>🚀 Employee Productivity Dashboard 🚀| Diverse Infotech Pvt Ltd</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: #4B8BBE;'>|🚀 Employee Productivity Dashboard 🚀| Diverse Infotech Pvt Ltd</h1>", unsafe_allow_html=True)
 st.markdown("<h4 style='text-align: center; color: gray;'>Punctuality & Productivity Analysis Based on Daily Hours Worked</h4>", unsafe_allow_html=True)
 st.set_page_config(page_title="Employee Attendance Dashboard", layout="wide")
 
