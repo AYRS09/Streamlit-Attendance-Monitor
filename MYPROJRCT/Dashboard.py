@@ -53,48 +53,83 @@ import streamlit as st
 import pandas as pd
 import io
 import os
-st.markdown(
-    """
+import streamlit as st
+
+st.set_page_config(page_title="Employee Attendance Dashboard", layout="wide")
+
+st.markdown("""
     <style>
-    /* Full app black background */
+    /* === Background === */
     .stApp {
         background-color: #000000;
-        color: #FFFFFF;
+        color: #E0E0E0;
+        font-family: 'Segoe UI', sans-serif;
     }
 
-    /* Sidebar background */
+    /* === Sidebar === */
     section[data-testid="stSidebar"] {
-        background-color: #121212;
-    }
-
-    /* Header text colors */
-    h1, h2, h3, h4 {
-        color: #1DB954;  /* Spotify green look */
-    }
-
-    /* Buttons */
-    .stButton>button {
-        background-color: #1DB954;
+        background-color: #111111;
         color: white;
-        font-weight: bold;
-        border-radius: 10px;
+    }
+
+    /* === Titles and Headers === */
+    h1, h2, h3, h4 {
+        color: #00CED1; /* soft cyan */
+        font-weight: 600;
+        margin-bottom: 0.2em;
+    }
+
+    /* === Subheader/Tagline === */
+    .subtitle {
+        color: #B0B0B0;
+        font-size: 1.1em;
+        margin-bottom: 1.5em;
+    }
+
+    /* === Metric Boxes === */
+    .element-container:has(.metric-container), 
+    .element-container:has(.stPlotlyChart),
+    .element-container:has(.stDataFrame),
+    .element-container {
+        background-color: #1a1a1a;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        box-shadow: 0 0 10px rgba(0, 255, 255, 0.05);
+    }
+
+    /* === Buttons === */
+    .stButton>button {
+        background-color: #00CED1;
+        color: #000000;
+        border: none;
+        border-radius: 8px;
+        padding: 0.5em 1em;
+        font-weight: 600;
     }
 
     .stDownloadButton > button {
         background-color: #FFD700;
         color: black;
         font-weight: bold;
-        border-radius: 10px;
+        border-radius: 8px;
+        padding: 0.4em 1em;
     }
 
-    /* Inputs (dropdowns, text, etc.) */
+    /* === Inputs (dropdowns, text, etc.) === */
     .stTextInput>div>div>input,
     .stSelectbox>div>div>div>div {
         background-color: #1e1e1e;
         color: white;
     }
 
-    /* Scrollbars */
+    /* === Markdown Blocks === */
+    .stMarkdown {
+        font-size: 1rem;
+        color: #DDDDDD;
+    }
+
+    /* === Scrollbar === */
     ::-webkit-scrollbar {
         width: 8px;
     }
@@ -102,24 +137,13 @@ st.markdown(
         background: #333;
         border-radius: 10px;
     }
-
-    /* Chart/visualization container background */
-    .element-container:has(div[data-testid="stPlotlyChart"]),
-    .element-container:has(div[data-testid="stDataFrame"]),
-    .element-container:has(div[data-testid="stVegaLiteChart"]),
-    .element-container {
-        background-color: #111111;
-        padding: 1rem;
-        border-radius: 10px;
-        box-shadow: 0 0 12px rgba(255,255,255,0.05);
-    }
     </style>
-    """,
-    unsafe_allow_html=True
-)
+""", unsafe_allow_html=True)
 
+# Example UI Titles
+st.markdown("<h1>📊 Employee Productivity Dashboard | Diverse Infotech Pvt Ltd</h1>", unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Punctuality & Productivity Analysis Based on Daily Hours Worked</p>', unsafe_allow_html=True)
 st.markdown("## 🚀 Employee Attendance Dashboard")
-st.markdown("Welcome! Upload your Excel/CSV attendance file in the sidebar 👉")
 
 # --- File Upload ---
 st.sidebar.markdown("---")
