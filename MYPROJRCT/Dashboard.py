@@ -278,16 +278,6 @@ with tab2:
 
     st.success("This summary gives a quick snapshot of overall team attendance and productivity.")
 
-# --- Tab 2: Summary ---
-with tab2:
-    st.subheader("📄 Executive Summary")
-    st.markdown(f"""
-    - **Total Employees:** {total_employees}
-    - **Punctuality Rate:** {punctuality_rate:.2f}%
-    - **Average Hours Worked:** {avg_hours:.2f} hrs
-    """)
-    st.success("This summary gives a quick snapshot of overall team attendance and productivity.")
-
 # --- Tab 3: Download ---
 with tab3:
     st.subheader("📥 Download Processed Data")
