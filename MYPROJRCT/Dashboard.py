@@ -280,73 +280,67 @@ tab1, tab2, tab3, tab4 = st.tabs(["📊 Visualizations", "📋 Summary", "📅 D
 
 # --- Tab 1: Visualizations ---
 with tab1:
-    st.markdown("## 📊 Employee Attendance Visualizations")
+    # Centered title
+    st.markdown("<h2 style='text-align: center; color: white;'>📊 Employee Attendance Visualizations</h2>", unsafe_allow_html=True)
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader("📌 Total Hours Worked per Employee")
+    row1_col1, row1_col2 = st.columns(2)
+    with row1_col1:
+        st.subheader("⏱️ Total Hours Worked per Employee")
         fig1 = px.bar(
             filtered_df.groupby('employee_id')['hours_worked'].sum().reset_index(),
-            x='employee_id', y='hours_worked', color='hours_worked', color_continuous_scale='Greens'
-        )
-        fig1.update_layout(height=420)
+            x='employee_id', y='hours_worked', color='hours_worked', color_continuous_scale='Greens')
         st.plotly_chart(fig1, use_container_width=True)
 
-    with col2:
-        st.subheader("📌 Punctuality Ratio per Employee")
+    with row1_col2:
+        st.subheader("⏰ Punctuality Ratio per Employee")
         punctual_summary = filtered_df.groupby(['employee_id', 'is_punctual']).size().reset_index(name='Count')
         punctual_summary['Status'] = punctual_summary['is_punctual'].map({True: 'Met (≥8 hrs)', False: 'Not Met (<8 hrs)'})
         fig2 = px.bar(punctual_summary, x='employee_id', y='Count', color='Status', barmode='stack')
-        fig2.update_layout(height=420)
         st.plotly_chart(fig2, use_container_width=True)
 
-    col3, col4 = st.columns(2)
-    with col3:
-        st.subheader("📌 Daily Productivity Heatmap")
+    row2_col1, row2_col2 = st.columns(2)
+    with row2_col1:
+        st.subheader("🗓️ Daily Productivity Heatmap")
         heatmap_data = filtered_df.pivot_table(index='employee_id', columns='day_num', values='hours_worked')
         fig3 = px.imshow(heatmap_data.astype(np.float32), aspect="auto", color_continuous_scale='YlGnBu')
-        fig3.update_layout(height=420)
         st.plotly_chart(fig3, use_container_width=True)
 
-    with col4:
-        st.subheader("📌 Overall Punctuality Ratio")
+    with row2_col2:
+        st.subheader("📈 Overall Punctuality Ratio")
         overall = filtered_df['is_punctual'].value_counts().rename({True: 'Met ≥8 hrs', False: 'Not Met <8 hrs'})
         fig4 = px.pie(names=overall.index, values=overall.values)
-        fig4.update_layout(height=420)
         st.plotly_chart(fig4, use_container_width=True)
 
-    col5, col6 = st.columns(2)
-    with col5:
-        st.subheader("📌 Resident Type vs Hours Worked")
+    row3_col1, row3_col2 = st.columns(2)
+    with row3_col1:
+        st.subheader("🏘️ Resident Type vs Hours Worked")
         fig5 = px.box(filtered_df, x='employee_resident', y='hours_worked', color='employee_resident')
-        fig5.update_layout(height=420)
         st.plotly_chart(fig5, use_container_width=True)
 
-    with col6:
+    with row3_col2:
         st.subheader("🏅 Top 5 Most Punctual Employees")
         top5 = filtered_df[filtered_df['is_punctual'] == True]['employee_id'].value_counts().nlargest(5).reset_index()
         top5.columns = ['Employee ID', 'Punctual Days']
         fig_top5 = px.bar(top5, x='Employee ID', y='Punctual Days', color='Employee ID', text='Punctual Days')
-        fig_top5.update_layout(showlegend=False, height=420)
+        fig_top5.update_layout(showlegend=False)
         st.plotly_chart(fig_top5, use_container_width=True)
 
-    col7, col8 = st.columns(2)
-    with col7:
+    row4_col1, row4_col2 = st.columns(2)
+    with row4_col1:
         st.subheader("🚨 Top 5 Late Comers (Hours < 8)")
         bottom5 = filtered_df[filtered_df['is_punctual'] == False]['employee_id'].value_counts().nlargest(5).reset_index()
         bottom5.columns = ['Employee ID', 'Late Days']
         fig_bottom5 = px.bar(bottom5, x='Employee ID', y='Late Days', color='Employee ID', text='Late Days')
-        fig_bottom5.update_layout(showlegend=False, height=420)
+        fig_bottom5.update_layout(showlegend=False)
         st.plotly_chart(fig_bottom5, use_container_width=True)
 
-    with col8:
+    with row4_col2:
         st.subheader("⚖️ Punctuality vs Late Days Comparison")
         top_late_ids = bottom5['Employee ID'].tolist()
         compare_df = filtered_df[filtered_df['employee_id'].isin(top_late_ids)]
         compare_summary = compare_df.groupby(['employee_id', 'is_punctual']).size().reset_index(name='Count')
         compare_summary['Status'] = compare_summary['is_punctual'].map({True: 'Punctual Days', False: 'Late Days'})
         fig_compare = px.bar(compare_summary, x='employee_id', y='Count', color='Status', barmode='group')
-        fig_compare.update_layout(height=420)
         st.plotly_chart(fig_compare, use_container_width=True)
 
 # --- Tab 2: Summary ---
