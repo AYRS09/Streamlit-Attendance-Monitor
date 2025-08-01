@@ -267,7 +267,7 @@ total_punctual = filtered_df[filtered_df['is_punctual']].shape[0]
 avg_hours = round(filtered_df['hours_worked'].mean(), 2)
 punctuality_rate = round((total_punctual / total_days) * 100, 2) if total_days else 0.0
 
-st.markdown("## 📊 Key Metrics")
+st.markdown("<h2 style='text-align: center; color: white;'>📊 Key Metrics</h2>", unsafe_allow_html=True)")
 kpi1, kpi2, kpi3 = st.columns(3)
 kpi1.metric("👥 Total Employees", total_employees)
 kpi2.metric("✅ Punctuality Rate", f"{punctuality_rate}%")
