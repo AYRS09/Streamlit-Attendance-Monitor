@@ -54,46 +54,67 @@ import pandas as pd
 import io
 import os
 
-# --- Dark Theme Background Setup ---
 st.set_page_config(page_title="Employee Attendance Dashboard", layout="wide")
 
-# --- Page Animation/Header ---
 st.markdown(
     """
     <style>
-    /* Dark background */
+    /* Full app black background */
     .stApp {
-        background-color: #121212;
+        background-color: #000000;
         color: #FFFFFF;
     }
-    /* Sidebar styling */
+
+    /* Sidebar background */
     section[data-testid="stSidebar"] {
-        background-color: #1E1E1E;
+        background-color: #121212;
     }
-    /* Headers and titles */
+
+    /* Header text colors */
     h1, h2, h3, h4 {
-        color: #00C7FF;
+        color: #1DB954;  /* Spotify green look */
     }
-    /* Buttons and widgets */
+
+    /* Buttons */
     .stButton>button {
-        background-color: #00C7FF;
-        color: black;
+        background-color: #1DB954;
+        color: white;
         font-weight: bold;
         border-radius: 10px;
     }
+
     .stDownloadButton > button {
         background-color: #FFD700;
         color: black;
         font-weight: bold;
         border-radius: 10px;
     }
-    .stTextInput>div>div>input {
-        background-color: #333333;
+
+    /* Inputs (dropdowns, text, etc.) */
+    .stTextInput>div>div>input,
+    .stSelectbox>div>div>div>div {
+        background-color: #1e1e1e;
         color: white;
     }
-    .css-1cpxqw2 {
-        background-color: #333333 !important;
-        color: white !important;
+
+    /* Scrollbars */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #333;
+        border-radius: 10px;
+    }
+
+    /* Chart/visualization container background */
+    .element-container:has(div[data-testid="stPlotlyChart"]),
+    .element-container:has(div[data-testid="stDataFrame"]),
+    .element-container:has(div[data-testid="stVegaLiteChart"]),
+    .element-container {
+        background-color: #111111;
+        padding: 1rem;
+        border-radius: 10px;
+        box-shadow: 0 0 12px rgba(255,255,255,0.05);
     }
     </style>
     """,
@@ -102,7 +123,6 @@ st.markdown(
 
 st.markdown("## 🚀 Employee Attendance Dashboard")
 st.markdown("Welcome! Upload your Excel/CSV attendance file in the sidebar 👉")
-
 
 # --- File Upload ---
 st.sidebar.markdown("---")
