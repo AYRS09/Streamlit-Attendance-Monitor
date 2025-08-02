@@ -293,25 +293,6 @@ with tab2:
 with tab3:
     st.subheader("📥 Download Processed Data")
 
-    # Daily Summary Download
-    daily_summary = filtered_df.groupby('employee_id').agg(
-        Total_Days=('date', 'count'),
-        Punctual_Days=('is_punctual', lambda x: (x == True).sum()),
-        Late_Days=('is_punctual', lambda x: (x == False).sum()),
-        Punctuality_Rate=('is_punctual', lambda x: round((x == True).mean() * 100, 2)),
-        Avg_Hours_Worked=('hours_worked', 'mean')
-    ).reset_index()
-
-    daily_summary['Avg_Hours_Worked'] = daily_summary['Avg_Hours_Worked'].round(2)
-
-    st.markdown("### 📅 Download Daily Punctuality Summary")
-    st.download_button(
-        label="📄 Download Daily Summary CSV",
-        data=daily_summary.to_csv(index=False).encode('utf-8'),
-        file_name='daily_punctuality_summary.csv',
-        mime='text/csv'
-    )
-
     # Monthly Summary Download
     st.markdown("### 🗓️ Download Monthly Punctuality Summary")
 
@@ -354,7 +335,6 @@ with tab4:
 
                 output = io.BytesIO()
                 with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                    daily_summary.to_excel(writer, index=False, sheet_name='Daily Summary')
                     monthly_summary_df.to_excel(writer, index=False, sheet_name='Monthly Summary')
                 output.seek(0)
                 msg.add_attachment(
@@ -379,3 +359,4 @@ with tab4:
 # =============================
 st.markdown("---")
 st.markdown("© 2025 Diverse Infotech Pvt Ltd | Built by AYRS")
+
