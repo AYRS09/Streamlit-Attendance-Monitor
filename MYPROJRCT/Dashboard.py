@@ -333,6 +333,11 @@ with tab3:
         Avg_Hours_Worked=('hours_worked', lambda x: round(x.mean(), 2))
     ).reset_index()
 
+    # ➕ Add Punctual_Status column
+    monthly_summary_df['Punctual_Status'] = monthly_summary_df['Punctuality_Rate'].apply(
+        lambda x: "Yes" if x >= 90 else "No"
+    )
+
     # Provide CSV download
     csv_data = monthly_summary_df.to_csv(index=False).encode('utf-8')
     st.download_button(
@@ -386,6 +391,7 @@ with tab4:
 # =============================
 st.markdown("---")
 st.markdown("© 2025 Diverse Infotech Pvt Ltd | Built by AYRS")
+
 
 
 
