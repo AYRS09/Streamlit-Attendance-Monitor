@@ -44,7 +44,14 @@ else:
 # =============================
 # ⏱️ Last Updated Timestamp
 # =============================
-now = datetime.now().strftime("%d %b %Y, %I:%M %p")
+from datetime import datetime
+import pytz  # Add this import at the top of your script
+
+# Get current time in IST
+ist = pytz.timezone('Asia/Kolkata')
+now = datetime.now(ist).strftime("%d %b %Y, %I:%M %p")
+
+# Display Last Updated timestamp
 st.markdown(
     f"<div style='text-align:right; color:gray; font-size:0.85rem;'>🕒 Last updated: {now}</div>",
     unsafe_allow_html=True
@@ -359,4 +366,5 @@ with tab4:
 # =============================
 st.markdown("---")
 st.markdown("© 2025 Diverse Infotech Pvt Ltd | Built by AYRS")
+
 
