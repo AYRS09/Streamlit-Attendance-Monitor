@@ -305,24 +305,24 @@ with tab3:
     month_label = pd.to_datetime(start_date_input).strftime("%B %Y")
     st.markdown(f"### 🗓️ Download Monthly Punctuality Summary for **{month_label}**")
 
-    # Add column for Month-Year
-    filtered_df['month_year'] = filtered_df['date'].dt.to_period('M').astype(str)
+    # Add Month-Year column
+    download_df = filtered_df.copy()
+    download_df['month_year'] = download_df['date'].dt.to_period('M').astype(str)
 
-    # Create Monthly Summary
-    monthly_summary_df = filtered_df.groupby(['employee_id', 'month_year']).agg(
+    # Monthly Summary
+    monthly_summary_df = download_df.groupby(['employee_id', 'month_year']).agg(
         Total_Days=('date', 'count'),
-        Punctual_Days=('is_punctual', lambda x: (x == True).sum()),
-        Late_Days=('is_punctual', lambda x: (x == False).sum()),
-        Punctuality_Rate=('is_punctual', lambda x: round((x == True).mean() * 100, 2)),
-        Avg_Hours_Worked=('hours_worked', 'mean')
+        Punctual_Days=('is_punctual', 'sum'),
+        Late_Days=('is_punctual', lambda x: (~x).sum()),
+        Punctuality_Rate=('is_punctual', lambda x: round(x.mean() * 100, 2)),
+        Avg_Hours_Worked=('hours_worked', lambda x: round(x.mean(), 2))
     ).reset_index()
 
-    monthly_summary_df['Avg_Hours_Worked'] = monthly_summary_df['Avg_Hours_Worked'].round(2)
-
-    # CSV Download Button
+    # Provide CSV download
+    csv_data = monthly_summary_df.to_csv(index=False).encode('utf-8')
     st.download_button(
         label="📄 Download Monthly Summary CSV",
-        data=monthly_summary_df.to_csv(index=False).encode('utf-8'),
+        data=csv_data,
         file_name=f'monthly_punctuality_summary_{month_label.replace(" ", "_")}.csv',
         mime='text/csv'
     )
@@ -371,6 +371,7 @@ with tab4:
 # =============================
 st.markdown("---")
 st.markdown("© 2025 Diverse Infotech Pvt Ltd | Built by AYRS")
+
 
 
 
