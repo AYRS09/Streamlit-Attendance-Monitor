@@ -159,14 +159,29 @@ df_long['is_punctual'] = df_long['hours_worked'] >= 8
 # =============================
 st.sidebar.header("🔍 Filter Options")
 
+# Employee filter
 employees = sorted(df_long['employee_id'].dropna().unique())
 selected_employees = st.sidebar.selectbox("👤 Select Employee", options=["All"] + employees)
+
+# Residency filter
 residency = st.sidebar.selectbox("🏩 Resident Type", options=["All", "Local", "Non-local"])
+
+# Department filter
 departments = sorted(df_long['employee_department'].dropna().unique())
 selected_departments = st.sidebar.multiselect("🏢 Select Department(s)", options=departments, default=departments)
 
-min_date, max_date = df_long['date'].min(), df_long['date'].max()
-date_range = st.sidebar.date_input("🗓️ Select Date Range", [min_date, max_date], min_value=min_date, max_value=max_date)
+# Extended Date Range filter
+min_date = pd.to_datetime("2020-01-01")
+max_date = pd.to_datetime("2030-12-31")
+default_start = df_long['date'].min()
+default_end = df_long['date'].max()
+
+date_range = st.sidebar.date_input(
+    "🗓️ Select Date Range",
+    [default_start, default_end],
+    min_value=min_date,
+    max_value=max_date
+)
 
 # --- Apply Filters ---
 filtered_df = df_long[
@@ -371,6 +386,7 @@ with tab4:
 # =============================
 st.markdown("---")
 st.markdown("© 2025 Diverse Infotech Pvt Ltd | Built by AYRS")
+
 
 
 
