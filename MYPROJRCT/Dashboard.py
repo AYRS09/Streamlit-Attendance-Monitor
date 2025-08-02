@@ -140,17 +140,18 @@ df.drop(columns='total_hours', inplace=True)
 # =============================
 # 🔄 Reshape Data
 # =============================
+# 📅 Select Attendance Start Date
+st.sidebar.markdown("### 📅 Select Attendance Start Date")
+start_date_input = st.sidebar.date_input("Start Date", value=pd.to_datetime("2025-06-01"))
 day_cols = sorted([col for col in df.columns if col.startswith('hours_')], key=lambda x: int(x.split('_')[1]))
-
 df_long = df.melt(
     id_vars=['employee_id', 'employee_gender', 'employee_resident', 'employee_department'],
     value_vars=day_cols,
     var_name='day',
     value_name='hours_worked'
 )
-
 df_long['day_num'] = df_long['day'].str.extract(r'(\d+)').astype(int)
-df_long['date'] = pd.to_datetime('2025-06-01') + pd.to_timedelta(df_long['day_num'] - 1, unit='D')
+df_long['date'] = pd.to_datetime(start_date_input) + pd.to_timedelta(df_long['day_num'] - 1, unit='D')
 df_long['is_punctual'] = df_long['hours_worked'] >= 8
 
 # =============================
@@ -300,11 +301,14 @@ with tab2:
 with tab3:
     st.subheader("📥 Download Processed Data")
 
-    # Monthly Summary Download
-    st.markdown("### 🗓️ Download Monthly Punctuality Summary")
+    # 📌 Display Month-Year from selected start date
+    month_label = pd.to_datetime(start_date_input).strftime("%B %Y")
+    st.markdown(f"### 🗓️ Download Monthly Punctuality Summary for **{month_label}**")
 
+    # Add column for Month-Year
     filtered_df['month_year'] = filtered_df['date'].dt.to_period('M').astype(str)
 
+    # Create Monthly Summary
     monthly_summary_df = filtered_df.groupby(['employee_id', 'month_year']).agg(
         Total_Days=('date', 'count'),
         Punctual_Days=('is_punctual', lambda x: (x == True).sum()),
@@ -315,10 +319,11 @@ with tab3:
 
     monthly_summary_df['Avg_Hours_Worked'] = monthly_summary_df['Avg_Hours_Worked'].round(2)
 
+    # CSV Download Button
     st.download_button(
         label="📄 Download Monthly Summary CSV",
         data=monthly_summary_df.to_csv(index=False).encode('utf-8'),
-        file_name='monthly_punctuality_summary.csv',
+        file_name=f'monthly_punctuality_summary_{month_label.replace(" ", "_")}.csv',
         mime='text/csv'
     )
 
@@ -366,5 +371,6 @@ with tab4:
 # =============================
 st.markdown("---")
 st.markdown("© 2025 Diverse Infotech Pvt Ltd | Built by AYRS")
+
 
 
