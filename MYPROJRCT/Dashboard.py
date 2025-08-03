@@ -129,17 +129,9 @@ for in_col, out_col in zip(in_cols, out_cols):
 # =============================
 
 # Convert 'date' and time columns to datetime
-# ✅ Only run this block if those columns exist
-required_cols = {'date', 'in_time', 'out_time'}
-if required_cols.issubset(df.columns):
-    df['date'] = pd.to_datetime(df['date'], errors='coerce')
-    df['in_time'] = pd.to_datetime(df['in_time'], errors='coerce')
-    df['out_time'] = pd.to_datetime(df['out_time'], errors='coerce')
-
-    df['is_punctual'] = df['in_time'].dt.time <= pd.to_datetime("08:00:00").time()
-    df['is_punctual'] = df['is_punctual'].apply(lambda x: "Yes" if x else "No")
-else:
-    st.warning("⚠️ 'date', 'in_time', or 'out_time' column missing — skipping punctuality analysis.")
+df['date'] = pd.to_datetime(df['date'], errors='coerce')
+df['in_time'] = pd.to_datetime(df['in_time'], errors='coerce')
+df['out_time'] = pd.to_datetime(df['out_time'], errors='coerce')
 
 # ✅ Define punctuality: in_time ≤ 8:00 AM
 df['is_punctual'] = df['in_time'].dt.time <= pd.to_datetime("08:00:00").time()
@@ -414,6 +406,7 @@ with tab4:
 # =============================
 st.markdown("---")
 st.markdown("© 2025 Diverse Infotech Pvt Ltd | Built by AYRS")
+
 
 
 
