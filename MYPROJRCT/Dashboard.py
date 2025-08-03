@@ -133,12 +133,6 @@ df['date'] = pd.to_datetime(df['date'], errors='coerce')
 df['in_time'] = pd.to_datetime(df['in_time'], errors='coerce')
 df['out_time'] = pd.to_datetime(df['out_time'], errors='coerce')
 
-# ✅ Define punctuality: in_time ≤ 8:00 AM
-df['is_punctual'] = df['in_time'].dt.time <= pd.to_datetime("08:00:00").time()
-
-# Optional: Make 'is_punctual' more readable as Yes/No
-df['is_punctual'] = df['is_punctual'].apply(lambda x: "Yes" if x else "No")
-
 # --- Handle Duplicates ---
 df.drop_duplicates(inplace=True)
 duplicate_ids = df['employee_id'].value_counts()
@@ -406,6 +400,7 @@ with tab4:
 # =============================
 st.markdown("---")
 st.markdown("© 2025 Diverse Infotech Pvt Ltd | Built by AYRS")
+
 
 
 
