@@ -337,22 +337,22 @@ with tab3:
     download_df['month_year'] = download_df['date'].dt.to_period('M').astype(str)
 
     # Monthly Summary (Sorted Employee IDs)
-monthly_summary_df = download_df.groupby(['employee_id', 'month_year']).agg(
-    Total_Days=('date', 'count'),
-    Punctual_Days=('is_punctual', 'sum'),
-    Late_Days=('is_punctual', lambda x: (~x).sum()),
-    Punctuality_Rate=('is_punctual', lambda x: round(x.mean() * 100, 2)),
-    Avg_Hours_Worked=('hours_worked', lambda x: round(x.mean(), 2))
-).reset_index()
+    monthly_summary_df = download_df.groupby(['employee_id', 'month_year']).agg(
+        Total_Days=('date', 'count'),
+        Punctual_Days=('is_punctual', 'sum'),
+        Late_Days=('is_punctual', lambda x: (~x).sum()),
+        Punctuality_Rate=('is_punctual', lambda x: round(x.mean() * 100, 2)),
+        Avg_Hours_Worked=('hours_worked', lambda x: round(x.mean(), 2))
+    ).reset_index()
 
-# Sort employee_id numerically (T1, T2, ..., T10)
-monthly_summary_df['sort_key'] = monthly_summary_df['employee_id'].str.extract('(\d+)').astype(int)
-monthly_summary_df = monthly_summary_df.sort_values('sort_key').drop(columns='sort_key')
+    # Sort employee_id numerically (T1, T2, ..., T10)
+    monthly_summary_df['sort_key'] = monthly_summary_df['employee_id'].str.extract('(\d+)').astype(int)
+    monthly_summary_df = monthly_summary_df.sort_values('sort_key').drop(columns='sort_key')
 
-# ➕ Add Punctual_Status column
-monthly_summary_df['Punctual_Status'] = monthly_summary_df['Punctuality_Rate'].apply(
-    lambda x: "Yes" if x >= 90 else "No"
-)
+    # ➕ Add Punctual_Status column
+    monthly_summary_df['Punctual_Status'] = monthly_summary_df['Punctuality_Rate'].apply(
+        lambda x: "Yes" if x >= 90 else "No"
+    )
 
     # Provide CSV download
     csv_data = monthly_summary_df.to_csv(index=False).encode('utf-8')
@@ -407,6 +407,7 @@ with tab4:
 # =============================
 st.markdown("---")
 st.markdown("© 2025 Diverse Infotech Pvt Ltd | Built by AYRS")
+
 
 
 
