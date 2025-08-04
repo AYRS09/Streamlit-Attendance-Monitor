@@ -164,7 +164,15 @@ df_long['is_punctual'] = df_long['hours_worked'] >= 8
 st.sidebar.header("🔍 Filter Options")
 
 # Employee filter
-employees = sorted(df_long['employee_id'].dropna().unique())
+import re
+
+def sort_emp_id(emp_ids):
+    def extract_num(emp_id):
+        match = re.search(r'\d+', str(emp_id))
+        return int(match.group()) if match else float('inf')
+    return sorted(emp_ids, key=extract_num)
+
+employees = sort_emp_id(df_long['employee_id'].dropna().unique())
 selected_employees = st.sidebar.selectbox("👤 Select Employee", options=["All"] + employees)
 
 # Residency filter
@@ -395,6 +403,7 @@ with tab4:
 # =============================
 st.markdown("---")
 st.markdown("© 2025 Diverse Infotech Pvt Ltd | Built by AYRS")
+
 
 
 
